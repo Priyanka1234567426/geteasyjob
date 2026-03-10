@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My App</title>
+<title>Claude App</title>
 
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
 </head>
 
 <body>
@@ -14,10 +15,11 @@
 
 <script type="text/babel">
 
-function App() {
-  return (
-   import { useState, useEffect, useCallback } from "react";
+const { useState, useEffect, useCallback} = React;
 
+/* PASTE CLAUDE ARTIFACT BELOW */
+
+function App(){
 const C = {
   bg:"#070d1a", card:"#0e1623", card2:"#0a1020", card3:"#111d2e",
   accent:"#5b52f5", accentL:"#7b74ff", green:"#00c896", greenL:"#00e0a8",
@@ -1099,8 +1101,9 @@ export default function App(){
     </div>
   );
 }
-  );
 }
+
+/* END */
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 
