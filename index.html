@@ -1,11 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Claude App</title>
+<meta charset="UTF-8">
+<title>EasyJob AI</title>
 
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+<style>
+body{
+margin:0;
+font-family:Segoe UI, sans-serif;
+background:#070d1a;
+color:#eef2ff;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+padding:40px 20px;
+}
+
+.card{
+background:#0e1623;
+border-radius:12px;
+padding:20px;
+margin-bottom:12px;
+cursor:pointer;
+transition:.2s;
+}
+
+.card:hover{
+transform:translateY(-2px);
+}
+
+.btn{
+background:#5b52f5;
+border:none;
+padding:10px 18px;
+border-radius:6px;
+color:white;
+cursor:pointer;
+}
+
+.score{
+font-weight:bold;
+color:#00c896;
+}
+</style>
 
 </head>
 
@@ -15,1097 +58,170 @@
 
 <script type="text/babel">
 
-const { useState, useEffect, useCallback} = React;
-
-/* PASTE CLAUDE ARTIFACT BELOW */
-
-function App(){
-const C = {
-  bg:"#070d1a", card:"#0e1623", card2:"#0a1020", card3:"#111d2e",
-  accent:"#5b52f5", accentL:"#7b74ff", green:"#00c896", greenL:"#00e0a8",
-  border:"#1a2840", text:"#eef2ff", muted:"#6b7a99",
-  warn:"#f5922f", danger:"#e05555", gold:"#f5c842", purple:"#9b7ff5", teal:"#00bcd4",
-};
-const F = `'DM Sans','Segoe UI',system-ui,sans-serif`;
-const S = {
-  btn:  {background:C.accent,color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontWeight:700,cursor:"pointer",fontSize:14,fontFamily:F,transition:".2s"},
-  btnG: {background:C.green,color:"#04120c",border:"none",borderRadius:10,padding:"10px 22px",fontWeight:700,cursor:"pointer",fontSize:14,fontFamily:F},
-  btnO: {background:"none",color:C.muted,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 22px",fontWeight:500,cursor:"pointer",fontSize:14,fontFamily:F},
-  btnT: (on,col)=>({background:on?`${col}20`:"none",color:on?col:C.muted,border:`2px solid ${on?col:C.border}`,borderRadius:10,padding:"10px 14px",fontWeight:on?700:400,cursor:"pointer",fontSize:13,fontFamily:F,transition:".2s",textAlign:"left",width:"100%"}),
-  card: {background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:22},
-  inp:  {background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 14px",color:C.text,fontSize:14,width:"100%",outline:"none",boxSizing:"border-box",fontFamily:F},
-  ta:   {background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",color:C.text,fontSize:13,width:"100%",outline:"none",resize:"vertical",fontFamily:F,lineHeight:1.6,boxSizing:"border-box"},
-  lbl:  {fontSize:11,color:C.muted,marginBottom:6,display:"block",fontWeight:700,textTransform:"uppercase",letterSpacing:.5},
-};
-
-const BUCKETS = ["IT","Consulting","Social Sector","Non-IT","Mixed"];
-const BUCKET_ICONS = {IT:"💻",Consulting:"📊","Social Sector":"🌱","Non-IT":"🏭",Mixed:"🔀"};
-const SKILL_LABELS = {1:"Beginner",2:"Basic",3:"Intermediate",4:"Advanced",5:"Expert"};
-const SKILL_COLORS = {1:C.danger,2:C.warn,3:"#f5c842",4:C.accentL,5:C.green};
-const PIPELINE_STAGES = ["Applied","Under Review","Shortlisted","Interview Scheduled","Offer Extended","Rejected"];
-const STAGE_COLORS = {"Applied":C.muted,"Under Review":C.accent,"Shortlisted":C.purple,"Interview Scheduled":C.gold,"Offer Extended":C.green,"Rejected":C.danger};
-const INTERVIEW_ROUNDS = [
-  {id:"hr_screen",label:"HR Screening",icon:"📞"},
-  {id:"technical",label:"Technical Round",icon:"💻"},
-  {id:"case_study",label:"Case Study",icon:"📋"},
-  {id:"panel",label:"Panel Interview",icon:"👥"},
-  {id:"final",label:"Final Round",icon:"🏁"},
-  {id:"offer",label:"Got an Offer",icon:"🎉"},
-];
-const REJECTION_REASONS = ["Skill gap in a core area","Overqualified / Underqualified","Cultural fit","Budget freeze","Another candidate selected","Role closed internally","No reason given"];
-const RESPONSE_TYPES = [
-  {id:"interview",label:"Got an Interview 🎯",color:C.green,desc:"Called or emailed to schedule"},
-  {id:"rejected",label:"Got Rejected ❌",color:C.danger,desc:"Received a rejection"},
-  {id:"ghosted",label:"No Response 👻",color:C.muted,desc:"Heard absolutely nothing"},
-  {id:"waiting",label:"Still Waiting ⏳",color:C.warn,desc:"No update yet"},
-];
+const {useState} = React
 
 const JOBS = [
-  {id:1,title:"Product Manager",company:"Zepto",location:"Bangalore",bucket:"IT",salary:"₹25–40 LPA",yoe:"3–6",type:"Full-time",hot:true,desc:"Lead product strategy for quick-commerce. Work cross-functionally with engineering, design, and data to ship impactful features.",skills:[{name:"Product Strategy",major:true},{name:"Data Analysis",major:true},{name:"User Research",major:true},{name:"Agile/Scrum",major:false},{name:"Stakeholder Management",major:false},{name:"Roadmap Planning",major:false}],growthSkills:["Experimentation frameworks","ML-product collaboration","Monetisation strategy"]},
-  {id:2,title:"Business Analyst",company:"McKinsey & Co.",location:"Mumbai",bucket:"Consulting",salary:"₹18–28 LPA",yoe:"0–3",type:"Full-time",hot:true,desc:"Solve complex problems for Fortune 500 clients. Heavy structured problem-solving and data modelling.",skills:[{name:"Structured Problem Solving",major:true},{name:"Data Modelling",major:true},{name:"Business Case Writing",major:true},{name:"Excel/Sheets",major:false},{name:"PowerPoint",major:false},{name:"Client Communication",major:false}],growthSkills:["Python/R for analysis","Industry benchmarking","Change management"]},
-  {id:3,title:"Program Manager",company:"Teach For India",location:"Hyderabad",bucket:"Social Sector",salary:"₹8–14 LPA",yoe:"1–4",type:"Full-time",hot:false,desc:"Manage fellowship programs across 50+ schools. Drive data-informed decisions and build community partnerships.",skills:[{name:"Program Management",major:true},{name:"Impact Measurement",major:true},{name:"Training & Facilitation",major:true},{name:"Data Tracking",major:false},{name:"Stakeholder Engagement",major:false},{name:"Community Outreach",major:false}],growthSkills:["Grant writing","M&E frameworks","Advocacy & policy"]},
-  {id:4,title:"Operations Manager",company:"Delhivery",location:"Hyderabad",bucket:"Non-IT",salary:"₹12–18 LPA",yoe:"3–7",type:"Full-time",hot:false,desc:"Oversee last-mile delivery operations for Hyderabad region. Manage a team of 200+ delivery partners.",skills:[{name:"Operations Management",major:true},{name:"Process Optimisation",major:true},{name:"Team Leadership",major:true},{name:"KPI Tracking",major:false},{name:"Vendor Management",major:false},{name:"Logistics",major:false}],growthSkills:["Supply chain analytics","Route optimisation","Lean/Six Sigma"]},
-  {id:5,title:"Growth Analyst",company:"CRED",location:"Bangalore",bucket:"IT",salary:"₹15–22 LPA",yoe:"1–4",type:"Full-time",hot:true,desc:"Drive user acquisition and retention. Build conversion funnels and run A/B tests at scale.",skills:[{name:"SQL",major:true},{name:"A/B Testing",major:true},{name:"User Funnels",major:true},{name:"Growth Hacking",major:false},{name:"Python (basic)",major:false},{name:"Excel/Sheets",major:false}],growthSkills:["Cohort analysis","Segment/Amplitude","Statistical significance testing"]},
-  {id:6,title:"Strategy Associate",company:"BCG",location:"Delhi",bucket:"Consulting",salary:"₹20–32 LPA",yoe:"0–3",type:"Full-time",hot:true,desc:"Join BCG's strategy practice helping clients navigate market entry and transformation decisions.",skills:[{name:"Strategy Frameworks",major:true},{name:"Quantitative Analysis",major:true},{name:"Client Presentations",major:true},{name:"Slide Design",major:false},{name:"Research",major:false},{name:"Industry Analysis",major:false}],growthSkills:["Scenario planning","Due diligence","Competitive intelligence"]},
-  {id:7,title:"Data Scientist",company:"PhonePe",location:"Bangalore",bucket:"IT",salary:"₹22–35 LPA",yoe:"2–5",type:"Full-time",hot:true,desc:"Build ML models for fraud detection and personalisation across 500M+ transactions.",skills:[{name:"Python/ML",major:true},{name:"Statistics",major:true},{name:"SQL",major:true},{name:"Model Deployment",major:false},{name:"Spark/BigQuery",major:false},{name:"Feature Engineering",major:false}],growthSkills:["LLM fine-tuning","Real-time inference","MLOps pipelines"]},
-  {id:8,title:"Finance Manager",company:"Meesho",location:"Bangalore",bucket:"Non-IT",salary:"₹18–26 LPA",yoe:"4–8",type:"Full-time",hot:false,desc:"Own FP&A for the marketplace division. Partner with business teams on unit economics and fundraise prep.",skills:[{name:"Financial Modelling",major:true},{name:"FP&A",major:true},{name:"Unit Economics",major:true},{name:"Excel/Sheets",major:false},{name:"ERP Systems",major:false},{name:"Stakeholder Reporting",major:false}],growthSkills:["GAAP/Ind-AS","Investor relations","Scenario modelling"]},
-  {id:9,title:"Software Engineer",company:"Swiggy",location:"Bangalore",bucket:"IT",salary:"₹20–32 LPA",yoe:"2–5",type:"Full-time",hot:true,desc:"Build scalable microservices powering real-time order routing across 500+ cities.",skills:[{name:"Java/Go",major:true},{name:"System Design",major:true},{name:"Distributed Systems",major:true},{name:"Kafka",major:false},{name:"PostgreSQL",major:false},{name:"Docker/K8s",major:false}],growthSkills:["gRPC & protobuf","Chaos engineering","Cost-optimised cloud architecture"]},
-  {id:10,title:"HR Business Partner",company:"Infosys BPM",location:"Pune",bucket:"Non-IT",salary:"₹10–16 LPA",yoe:"3–6",type:"Full-time",hot:false,desc:"Partner with 3 business units to drive talent strategies, performance frameworks and attrition management.",skills:[{name:"HR Strategy",major:true},{name:"Talent Management",major:true},{name:"Performance Management",major:true},{name:"HRIS",major:false},{name:"Labour Law",major:false},{name:"Employee Engagement",major:false}],growthSkills:["People analytics","Compensation benchmarking","OD interventions"]},
-];
+{
+title:"Product Manager",
+company:"Zepto",
+salary:"₹25–40 LPA",
+skills:["product","analytics","strategy"]
+},
+{
+title:"Business Analyst",
+company:"McKinsey",
+salary:"₹18–28 LPA",
+skills:["analysis","excel","strategy"]
+},
+{
+title:"Growth Analyst",
+company:"CRED",
+salary:"₹15–22 LPA",
+skills:["sql","growth","analytics"]
+},
+{
+title:"Program Manager",
+company:"Teach For India",
+salary:"₹8–14 LPA",
+skills:["program","impact","management"]
+}
+]
 
-const SEED_OUTCOMES = [
-  {skill:"SQL",rating:5,round:"technical",passed:true,bucket:"IT"},{skill:"SQL",rating:5,round:"technical",passed:true,bucket:"IT"},
-  {skill:"SQL",rating:5,round:"technical",passed:true,bucket:"IT"},{skill:"SQL",rating:5,round:"technical",passed:false,bucket:"IT"},
-  {skill:"SQL",rating:4,round:"technical",passed:true,bucket:"IT"},{skill:"SQL",rating:4,round:"technical",passed:true,bucket:"IT"},
-  {skill:"SQL",rating:4,round:"technical",passed:true,bucket:"IT"},{skill:"SQL",rating:4,round:"technical",passed:true,bucket:"IT"},
-  {skill:"SQL",rating:4,round:"technical",passed:false,bucket:"IT"},{skill:"SQL",rating:3,round:"technical",passed:true,bucket:"IT"},
-  {skill:"SQL",rating:3,round:"technical",passed:false,bucket:"IT"},{skill:"SQL",rating:3,round:"technical",passed:false,bucket:"IT"},
-  {skill:"SQL",rating:3,round:"technical",passed:false,bucket:"IT"},{skill:"SQL",rating:2,round:"technical",passed:false,bucket:"IT"},
-  {skill:"Product Strategy",rating:5,round:"hr_screen",passed:true,bucket:"IT"},{skill:"Product Strategy",rating:5,round:"hr_screen",passed:true,bucket:"IT"},
-  {skill:"Product Strategy",rating:4,round:"hr_screen",passed:true,bucket:"IT"},{skill:"Product Strategy",rating:4,round:"hr_screen",passed:true,bucket:"IT"},
-  {skill:"Product Strategy",rating:4,round:"hr_screen",passed:false,bucket:"IT"},{skill:"Product Strategy",rating:3,round:"hr_screen",passed:false,bucket:"IT"},
-  {skill:"Structured Problem Solving",rating:5,round:"case_study",passed:true,bucket:"Consulting"},
-  {skill:"Structured Problem Solving",rating:4,round:"case_study",passed:true,bucket:"Consulting"},
-  {skill:"Structured Problem Solving",rating:4,round:"case_study",passed:false,bucket:"Consulting"},
-  {skill:"Structured Problem Solving",rating:3,round:"case_study",passed:false,bucket:"Consulting"},
-  {skill:"A/B Testing",rating:4,round:"technical",passed:true,bucket:"IT"},{skill:"A/B Testing",rating:4,round:"technical",passed:true,bucket:"IT"},
-  {skill:"A/B Testing",rating:3,round:"technical",passed:false,bucket:"IT"},{skill:"A/B Testing",rating:3,round:"technical",passed:false,bucket:"IT"},
-  {skill:"Financial Modelling",rating:5,round:"technical",passed:true,bucket:"Non-IT"},
-  {skill:"Financial Modelling",rating:4,round:"technical",passed:true,bucket:"Non-IT"},
-  {skill:"Financial Modelling",rating:3,round:"technical",passed:false,bucket:"Non-IT"},
-];
+function calculateMatch(resume,job){
+if(!resume) return 30
 
-async function callClaude(messages,sys){
-  try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages})});
-    const d=await r.json();
-    return d.content?.map(b=>b.text||"").join("")||"";
-  }catch{return "";}
+let score = 30
+job.skills.forEach(s=>{
+if(resume.toLowerCase().includes(s)) score+=20
+})
+
+return Math.min(score,95)
 }
 
-function Tag({c,ch}){
-  const col=c==="green"?C.green:c==="warn"?C.warn:c==="danger"?C.danger:c==="gold"?C.gold:c==="purple"?C.purple:c==="teal"?C.teal:C.accent;
-  return <span style={{display:"inline-block",background:`${col}18`,color:col,border:`1px solid ${col}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700,letterSpacing:".5px",textTransform:"uppercase"}}>{ch}</span>;
+function App(){
+
+const [resume,setResume] = useState("")
+const [selectedJob,setSelectedJob] = useState(null)
+const [applications,setApplications] = useState([])
+
+function apply(job){
+setApplications([...applications,job])
+alert("Application submitted!")
 }
 
-function Spinner({text}){
-  const [d,setD]=useState(".");
-  useEffect(()=>{const t=setInterval(()=>setD(p=>p.length>=3?".":p+"."),400);return()=>clearInterval(t);},[]);
-  return(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14,padding:40}}>
-      <div style={{width:40,height:40,border:`3px solid ${C.border}`,borderTop:`3px solid ${C.accent}`,borderRadius:"50%",animation:"spin 1s linear infinite"}}/>
-      <p style={{color:C.muted,fontSize:13}}>{text}{d}</p>
-    </div>
-  );
+return(
+
+<div className="container">
+
+<h1>🚀 EasyJob AI</h1>
+
+<p style={{color:"#6b7a99"}}>
+Find jobs matched to your resume
+</p>
+
+<h3>Paste Resume</h3>
+
+<textarea
+style={{
+width:"100%",
+height:"120px",
+padding:"10px",
+borderRadius:"8px",
+marginBottom:"20px"
+}}
+placeholder="Paste your resume here..."
+value={resume}
+onChange={(e)=>setResume(e.target.value)}
+/>
+
+<h3>Job Matches</h3>
+
+{JOBS.map((job,i)=>{
+
+const score = calculateMatch(resume,job)
+
+return(
+
+<div
+key={i}
+className="card"
+onClick={()=>setSelectedJob(job)}
+>
+
+<h3>{job.title}</h3>
+
+<p>{job.company}</p>
+
+<p>{job.salary}</p>
+
+<p className="score">
+Match Score: {score}%
+</p>
+
+</div>
+
+)
+
+})}
+
+{selectedJob && (
+
+<div
+style={{
+background:"#111d2e",
+padding:"20px",
+borderRadius:"12px",
+marginTop:"30px"
+}}
+>
+
+<h2>{selectedJob.title}</h2>
+
+<p>{selectedJob.company}</p>
+
+<p>{selectedJob.salary}</p>
+
+<h4>Required Skills</h4>
+
+<ul>
+{selectedJob.skills.map((s,i)=>
+<li key={i}>{s}</li>
+)}
+</ul>
+
+<button
+className="btn"
+onClick={()=>apply(selectedJob)}
+>
+Apply with AI
+</button>
+
+</div>
+
+)}
+
+<h3 style={{marginTop:"40px"}}>My Applications</h3>
+
+{applications.length===0 && (
+<p style={{color:"#6b7a99"}}>
+No applications yet
+</p>
+)}
+
+{applications.map((a,i)=>(
+<div key={i} className="card">
+<h4>{a.title}</h4>
+<p>{a.company}</p>
+</div>
+))}
+
+</div>
+
+)
+
 }
 
-function PctRing({pct,size=54,color}){
-  const r=size*.38,circ=2*Math.PI*r,fill=(pct/100)*circ;
-  const col=color||(pct>=70?C.green:pct>=45?C.warn:C.danger);
-  return(
-    <div style={{position:"relative",width:size,height:size,flexShrink:0}}>
-      <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.border} strokeWidth="3.5"/>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={col} strokeWidth="3.5" strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"/>
-      </svg>
-      <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-        <span style={{fontSize:size*.22,fontWeight:800,color:col,lineHeight:1}}>{pct}%</span>
-      </div>
-    </div>
-  );
-}
-
-function useToasts(){
-  const [toasts,setToasts]=useState([]);
-  const toast=useCallback((title,body,type="info",icon)=>{
-    const id=Date.now();
-    setToasts(p=>[...p,{id,title,body,type,icon}]);
-    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),4000);
-  },[]);
-  const dismiss=id=>setToasts(p=>p.filter(t=>t.id!==id));
-  return{toasts,toast,dismiss};
-}
-
-function ToastContainer({toasts,dismiss}){
-  return(
-    <div style={{position:"fixed",bottom:24,right:24,zIndex:999,display:"flex",flexDirection:"column",gap:10,alignItems:"flex-end",pointerEvents:"none"}}>
-      {toasts.map(t=>(
-        <div key={t.id} onClick={()=>dismiss(t.id)} style={{pointerEvents:"all",background:C.card3,border:`1px solid ${t.type==="success"?C.green:t.type==="warn"?C.warn:C.border}`,borderRadius:12,padding:"12px 18px",maxWidth:300,cursor:"pointer",animation:"fadeUp .3s ease",boxShadow:"0 8px 32px rgba(0,0,0,.5)"}}>
-          <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            <span style={{fontSize:18}}>{t.icon||"💬"}</span>
-            <div><div style={{fontWeight:700,fontSize:13,color:C.text}}>{t.title}</div>{t.body&&<div style={{fontSize:11,color:C.muted,marginTop:2}}>{t.body}</div>}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── ONBOARDING ──
-function OnboardingProgress({step}){
-  const labels=["Your Info","Resume","Interests"];
-  return(
-    <div style={{marginBottom:28}}>
-      <div style={{display:"flex",alignItems:"center"}}>
-        {labels.map((l,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"center",flex:i<labels.length-1?1:"none"}}>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5}}>
-              <div style={{width:32,height:32,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,background:i<step?C.green:i===step?C.accent:C.card2,color:i<step?"#04120c":"#fff",border:`2px solid ${i<step?C.green:i===step?C.accent:C.border}`,transition:".3s"}}>{i<step?"✓":i+1}</div>
-              <span style={{fontSize:10,color:i<=step?C.text:C.muted,fontWeight:i===step?700:400,whiteSpace:"nowrap"}}>{l}</span>
-            </div>
-            {i<labels.length-1&&<div style={{flex:1,height:2,background:i<step?C.green:C.border,margin:"0 8px",marginBottom:14,transition:".3s"}}/>}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SeekerOnboarding({onDone,toast}){
-  const [step,setStep]=useState(0);
-  const [p,setP]=useState({name:"",industry:"",experience:"",education:"",resume:"",buckets:[],privacyOk:false});
-  const u=(k,v)=>setP(x=>({...x,[k]:v}));
-  const toggleB=b=>u("buckets",p.buckets.includes(b)?p.buckets.filter(x=>x!==b):[...p.buckets,b]);
-  return(
-    <div style={{maxWidth:520,margin:"0 auto"}}>
-      <OnboardingProgress step={step}/>
-      {step===0&&(
-        <div style={S.card}>
-          <div style={{textAlign:"center",marginBottom:24}}><div style={{fontSize:38,marginBottom:8}}>👋</div><h2 style={{fontSize:22,fontWeight:900,marginBottom:6}}>Welcome to EasyJob</h2><p style={{color:C.muted,fontSize:13}}>Find your best-fit roles with AI</p></div>
-          <div style={{display:"grid",gap:14}}>
-            {[["Full Name","name","e.g. Priya Sharma"],["Industry / Domain","industry","e.g. Product Management"],["Education","education","e.g. MBA – ISB"],["Years of Experience","experience","e.g. 3 years"]].map(([l,k,ph])=>(
-              <div key={k}><label style={S.lbl}>{l}</label><input style={S.inp} placeholder={ph} value={p[k]} onChange={e=>u(k,e.target.value)}/></div>
-            ))}
-            <div onClick={()=>u("privacyOk",!p.privacyOk)} style={{display:"flex",gap:12,alignItems:"flex-start",background:C.card2,border:`1px solid ${p.privacyOk?C.green:C.border}`,borderRadius:10,padding:12,cursor:"pointer"}}>
-              <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${p.privacyOk?C.green:C.muted}`,background:p.privacyOk?C.green:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{p.privacyOk&&<span style={{color:"#04120c",fontSize:11,fontWeight:800}}>✓</span>}</div>
-              <p style={{fontSize:11,color:C.muted,lineHeight:1.5,margin:0}}>I agree EasyJob may process my resume to generate match scores. My data is never shared without consent.</p>
-            </div>
-            <button style={{...S.btn,opacity:(p.name&&p.industry&&p.education&&p.privacyOk)?1:.4}} disabled={!p.name||!p.industry||!p.education||!p.privacyOk} onClick={()=>setStep(1)}>Continue →</button>
-          </div>
-        </div>
-      )}
-      {step===1&&(
-        <div style={S.card}>
-          <div style={{textAlign:"center",marginBottom:20}}><div style={{fontSize:32,marginBottom:8}}>📄</div><h2 style={{fontSize:20,fontWeight:900,marginBottom:4}}>Paste Your Resume</h2><p style={{color:C.muted,fontSize:13}}>More detail = better match scores</p></div>
-          <textarea style={{...S.ta,minHeight:200,marginBottom:14}} placeholder={"PRIYA SHARMA\npriya@email.com\n\nEXPERIENCE\nProduct Analyst – Swiggy | 2022–Present\n• Improved search CTR by 18% via A/B testing\n\nSKILLS\nSQL, Product Management, Agile, User Research"} value={p.resume} onChange={e=>u("resume",e.target.value)}/>
-          <div style={{display:"flex",gap:10}}><button style={S.btnO} onClick={()=>setStep(0)}>← Back</button><button style={{...S.btn,flex:1,opacity:p.resume.length>20?1:.4}} disabled={p.resume.length<=20} onClick={()=>setStep(2)}>Continue →</button></div>
-        </div>
-      )}
-      {step===2&&(
-        <div style={S.card}>
-          <div style={{textAlign:"center",marginBottom:20}}><div style={{fontSize:32,marginBottom:8}}>🗂️</div><h2 style={{fontSize:20,fontWeight:900,marginBottom:4}}>Choose Interest Areas</h2></div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-            {BUCKETS.map(b=>{const sel=p.buckets.includes(b);return<div key={b} onClick={()=>toggleB(b)} style={{border:`2px solid ${sel?C.accent:C.border}`,background:sel?`${C.accent}15`:C.card2,borderRadius:12,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:".2s"}}><span style={{fontSize:22}}>{BUCKET_ICONS[b]}</span><span style={{fontWeight:600,fontSize:14,color:sel?C.accentL:C.text}}>{b}</span>{sel&&<span style={{marginLeft:"auto",color:C.accent}}>✓</span>}</div>;})}
-          </div>
-          <div style={{display:"flex",gap:10}}><button style={S.btnO} onClick={()=>setStep(1)}>← Back</button><button style={{...S.btnG,flex:1,opacity:p.buckets.length>0?1:.4}} disabled={!p.buckets.length} onClick={()=>{onDone(p);toast("Welcome aboard! 🎉",`${p.name}, your profile is live`,"success","👋");}}>🚀 Go to Dashboard</button></div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── JOB DASHBOARD ──
-function JobDashboard({profile,onSelect,appliedJobIds,bookmarkedJobIds,onToggleBookmark,toast}){
-  const [search,setSearch]=useState("");
-  const [sortBy,setSortBy]=useState("match");
-  const [showBookmarks,setShowBookmarks]=useState(false);
-
-  const score=job=>{
-    const rl=profile.resume.toLowerCase();
-    const hits=job.skills.filter(s=>rl.includes(s.name.toLowerCase().split(" ")[0])).length;
-    return Math.min(95,Math.round((hits/job.skills.length)*60)+20);
-  };
-
-  let jobs=JOBS.filter(j=>profile.buckets.includes(j.bucket)||profile.buckets.includes("Mixed"));
-  if(search.trim()){const q=search.toLowerCase();jobs=jobs.filter(j=>j.title.toLowerCase().includes(q)||j.company.toLowerCase().includes(q)||j.skills.some(s=>s.name.toLowerCase().includes(q)));}
-  if(showBookmarks)jobs=jobs.filter(j=>bookmarkedJobIds.has(j.id));
-  const sorted=[...jobs].sort((a,b)=>sortBy==="match"?score(b)-score(a):sortBy==="salary"?parseInt(b.salary.replace(/\D/g,""))-parseInt(a.salary.replace(/\D/g,"")):a.company.localeCompare(b.company));
-
-  return(
-    <div>
-      <div style={{marginBottom:20}}>
-        <Tag c="green" ch="Job Dashboard"/>
-        <h2 style={{fontSize:24,fontWeight:900,margin:"10px 0 4px"}}>Hey {profile.name.split(" ")[0]} 👋</h2>
-        <p style={{color:C.muted,fontSize:14}}>{sorted.length} roles matched</p>
-      </div>
-      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-        <div style={{flex:1,minWidth:160,position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.muted}}>🔍</span><input style={{...S.inp,paddingLeft:34}} placeholder="Search title, company, skill…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-        <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{...S.inp,width:"auto",cursor:"pointer"}}><option value="match">Best Match</option><option value="salary">Highest Salary</option><option value="company">Company A–Z</option></select>
-        <button onClick={()=>setShowBookmarks(b=>!b)} style={{...(showBookmarks?S.btn:S.btnO),display:"flex",alignItems:"center",gap:6,padding:"10px 14px",flexShrink:0}}>🔖 {showBookmarks?"All":"Saved"}</button>
-      </div>
-      {sorted.length===0&&<div style={{...S.card,textAlign:"center",padding:40}}><div style={{fontSize:40,marginBottom:12}}>🔍</div><div style={{fontWeight:700}}>No jobs match</div></div>}
-      <div style={{display:"grid",gap:10}}>
-        {sorted.map((job,idx)=>{
-          const sc=score(job);const applied=appliedJobIds.has(job.id);const bm=bookmarkedJobIds.has(job.id);
-          return(
-            <div key={job.id} style={{...S.card,cursor:"pointer",display:"flex",alignItems:"center",gap:14,transition:".2s",animation:`fadeUp .25s ease ${idx*.04}s both`,position:"relative"}}
-              onMouseEnter={e=>e.currentTarget.style.borderColor=C.accentL} onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}
-              onClick={()=>onSelect(job,sc)}>
-              {applied&&<div style={{position:"absolute",top:10,right:52,background:`${C.green}18`,color:C.green,border:`1px solid ${C.green}40`,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700}}>✓ APPLIED</div>}
-              {job.hot&&!applied&&<div style={{position:"absolute",top:10,right:52,background:`${C.warn}18`,color:C.warn,border:`1px solid ${C.warn}40`,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700}}>🔥 HOT</div>}
-              <PctRing pct={sc} size={52}/>
-              <div style={{flex:1}}>
-                <div style={{fontWeight:700,fontSize:15,paddingRight:80}}>{job.title}</div>
-                <div style={{color:C.muted,fontSize:12,marginTop:2}}>{job.company} · {job.location}</div>
-                <div style={{color:C.green,fontSize:13,marginTop:3,fontWeight:600}}>{job.salary} <span style={{color:C.muted,fontWeight:400}}>· {job.yoe}y exp</span></div>
-              </div>
-              <button onClick={e=>{e.stopPropagation();onToggleBookmark(job.id);}} style={{background:"none",border:`1px solid ${bm?C.warn:C.border}`,borderRadius:8,cursor:"pointer",fontSize:14,color:bm?C.warn:C.muted,padding:"6px 9px",flexShrink:0}}>🔖</button>
-              <span style={{color:C.muted,fontSize:18}}>›</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ── JOB DETAIL ──
-function JobDetail({job,initScore,profile,onBack,onApply,savedSkills,onSaveSkills,toast}){
-  const [phase,setPhase]=useState("overview");
-  const [skills,setSkills]=useState(()=>savedSkills||(()=>{const m={};job.skills.forEach(s=>m[s.name]=3);return m;})());
-  const [opts,setOpts]=useState({resume:true,cover:false});
-  const [loading,setLoading]=useState(false);
-  const [result,setResult]=useState(null);
-  const [score,setScore]=useState(initScore);
-  const [interviewPrep,setInterviewPrep]=useState(null);
-  const [prepLoading,setPrepLoading]=useState(false);
-
-  useEffect(()=>{onSaveSkills(job.id,skills);},[skills]);
-
-  const calcScore=()=>{
-    const maj=job.skills.filter(s=>s.major);const min=job.skills.filter(s=>!s.major);
-    const mA=maj.reduce((a,s)=>a+(skills[s.name]||3),0)/maj.length;
-    const nA=min.reduce((a,s)=>a+(skills[s.name]||3),0)/min.length;
-    return Math.min(98,Math.round(mA*14+nA*6+8));
-  };
-
-  const tailor=async()=>{
-    setLoading(true);setPhase("result");
-    const sys=`You are EasyJob's AI. Return ONLY valid JSON. Keys: summary(string),atsScore(int 60-95),hmScore(int 55-90),atsNotes(array of 3 strings),hmNotes(array of 3 strings),tailoredResume(string),coverLetter(string),improvements(array of 4 strings)`;
-    const prompt=`Job: ${job.title} at ${job.company}. Skills: ${job.skills.map(s=>s.name).join(", ")}. Candidate: ${profile.name}, ${profile.experience}, ${profile.education}. Resume: ${profile.resume.substring(0,400)}. Ratings: ${job.skills.map(s=>`${s.name}:${skills[s.name]}/5`).join(", ")}. resume=${opts.resume},cover=${opts.cover}`;
-    try{
-      const raw=await callClaude([{role:"user",content:prompt}],sys);
-      const clean=raw.replace(/```json|```/g,"").trim();
-      setResult(JSON.parse(clean));
-    }catch{
-      setResult({summary:`Tailored for ${job.title} at ${job.company}.`,atsScore:82,hmScore:74,atsNotes:["Keywords aligned with JD","Clean ATS-friendly format","Core skills highlighted"],hmNotes:["Experience directly relevant","Achievements quantified","Strong role fit signals"],tailoredResume:`${profile.name}\n\nTailored for: ${job.title} at ${job.company}\n\n${profile.resume}\n\n[AI-optimised for this role]`,coverLetter:opts.cover?`Dear Hiring Team,\n\nI am excited to apply for ${job.title} at ${job.company}.\n\nRegards,\n${profile.name}`:"",improvements:["Aligned experience with JD requirements","Added missing keywords","Strengthened bullet points","Optimised skills section"]});
-    }
-    setLoading(false);
-  };
-
-  const genPrep=async()=>{
-    setPrepLoading(true);
-    const sys=`You are an interview coach. Return ONLY valid JSON. Keys: questions(array of 5 objects each with q,hint,framework)`;
-    const prompt=`Role: ${job.title} at ${job.company}. Skills: ${job.skills.map(s=>s.name).join(", ")}. Generate 5 interview questions with hints and frameworks.`;
-    try{
-      const raw=await callClaude([{role:"user",content:prompt}],sys);
-      setInterviewPrep(JSON.parse(raw.replace(/```json|```/g,"").trim()));
-    }catch{
-      setInterviewPrep({questions:[
-        {q:`Tell me about a time you applied ${job.skills[0]?.name} to solve a real problem.`,hint:"Use STAR — Situation, Task, Action, Result.",framework:"STAR"},
-        {q:"How do you prioritise competing demands?",hint:"Show you have a system.",framework:"STAR"},
-        {q:`What do you know about ${job.company}'s business model?`,hint:"Research recent news.",framework:"Research"},
-        {q:"Describe a failure you learned from.",hint:"Show self-awareness and growth.",framework:"STAR"},
-        {q:"Where is your biggest skill gap for this role?",hint:"Be honest — show a plan.",framework:"Reflection"},
-      ]});
-    }
-    setPrepLoading(false);
-  };
-
-  const v=score>=70?{l:"Strong Match",c:C.green,i:"🟢"}:score>=45?{l:"Moderate Match",c:C.warn,i:"🟡"}:{l:"Low Match",c:C.danger,i:"🔴"};
-
-  if(phase==="overview")return(
-    <div style={{maxWidth:680,margin:"0 auto"}}>
-      <button style={{...S.btnO,marginBottom:18,padding:"7px 14px",fontSize:12}} onClick={onBack}>← Back to Jobs</button>
-      <div style={S.card}>
-        <div style={{display:"flex",gap:16,alignItems:"flex-start",marginBottom:20}}>
-          <PctRing pct={score} size={60}/>
-          <div><div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:6}}><h2 style={{fontSize:20,fontWeight:900}}>{job.title}</h2>{job.hot&&<Tag c="warn" ch="🔥 Hot"/>}</div><p style={{color:C.muted,fontSize:13}}>{job.company} · {job.location}</p><p style={{color:C.green,fontWeight:700,marginTop:4}}>{job.salary}</p></div>
-        </div>
-        <p style={{fontSize:14,color:"#bbc8e0",lineHeight:1.75,marginBottom:18}}>{job.desc}</p>
-        <div style={{marginBottom:18}}>
-          <h3 style={{fontSize:14,fontWeight:700,marginBottom:10}}>Required Skills</h3>
-          <div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:6}}>{job.skills.map(s=><span key={s.name} style={{background:s.major?`${C.green}15`:`${C.accent}10`,color:s.major?C.green:C.accentL,border:`1px solid ${s.major?`${C.green}30`:`${C.accent}25`}`,fontSize:12,padding:"4px 12px",borderRadius:8,fontWeight:s.major?600:400}}>{s.major?"★ ":""}{s.name}</span>)}</div>
-          <p style={{fontSize:11,color:C.muted}}>★ = Major skill — weighted higher in your fit score</p>
-        </div>
-        <div style={{background:`${C.purple}0c`,border:`1px solid ${C.purple}25`,borderRadius:12,padding:14,marginBottom:18}}>
-          <div style={{fontSize:12,fontWeight:700,color:C.purple,marginBottom:8}}>🚀 Skills to grow for this role</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{job.growthSkills.map(s=><span key={s} style={{background:`${C.purple}15`,color:C.purple,fontSize:11,padding:"3px 10px",borderRadius:6}}>{s}</span>)}</div>
-        </div>
-        <button style={{...S.btn,width:"100%",padding:14}} onClick={()=>setPhase("assess")}>🧪 Start Skill Assessment →</button>
-      </div>
-    </div>
-  );
-
-  if(phase==="assess")return(
-    <div style={{maxWidth:560,margin:"0 auto"}}>
-      <button style={{...S.btnO,marginBottom:18,padding:"7px 14px",fontSize:12}} onClick={()=>setPhase("overview")}>← Back</button>
-      <div style={S.card}>
-        <Tag c="green" ch="Skill Assessment"/>
-        <h2 style={{fontSize:20,fontWeight:900,margin:"10px 0 4px"}}>Rate Your Proficiency</h2>
-        <p style={{color:C.muted,fontSize:13,marginBottom:16}}>Be honest — accurate ratings improve tailoring and fit scores.</p>
-        <div style={{marginBottom:6,fontSize:11,color:C.green,fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>★ Major Skills</div>
-        {job.skills.filter(s=>s.major).map(s=>{const val=skills[s.name]||3;return(
-          <div key={s.name} style={{marginBottom:16}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:13,fontWeight:600}}>{s.name}</span><span style={{fontSize:12,color:SKILL_COLORS[val],fontWeight:700}}>{val}/5 — {SKILL_LABELS[val]}</span></div>
-            <input type="range" min={1} max={5} value={val} onChange={e=>setSkills(sk=>({...sk,[s.name]:Number(e.target.value)}))} style={{width:"100%",accentColor:SKILL_COLORS[val],cursor:"pointer"}}/>
-          </div>
-        );})}
-        <div style={{marginBottom:6,marginTop:8,fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Minor Skills</div>
-        {job.skills.filter(s=>!s.major).map(s=>{const val=skills[s.name]||3;return(
-          <div key={s.name} style={{marginBottom:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:13,color:C.muted}}>{s.name}</span><span style={{fontSize:12,color:SKILL_COLORS[val],fontWeight:700}}>{val}/5 — {SKILL_LABELS[val]}</span></div>
-            <input type="range" min={1} max={5} value={val} onChange={e=>setSkills(sk=>({...sk,[s.name]:Number(e.target.value)}))} style={{width:"100%",accentColor:SKILL_COLORS[val],cursor:"pointer"}}/>
-          </div>
-        );})}
-        <button style={{...S.btnG,width:"100%",padding:14}} onClick={()=>{setScore(calcScore());setPhase("tailor");}}>Get My Fit Score →</button>
-      </div>
-    </div>
-  );
-
-  if(phase==="tailor"){
-    const maj=job.skills.filter(s=>s.major);const min=job.skills.filter(s=>!s.major);
-    const mA=(maj.reduce((a,s)=>a+(skills[s.name]||3),0)/maj.length).toFixed(1);
-    const nA=(min.reduce((a,s)=>a+(skills[s.name]||3),0)/min.length).toFixed(1);
-    return(
-      <div style={{maxWidth:560,margin:"0 auto"}}>
-        <button style={{...S.btnO,marginBottom:18,padding:"7px 14px",fontSize:12}} onClick={()=>setPhase("assess")}>← Back</button>
-        <div style={S.card}>
-          <div style={{textAlign:"center",padding:"18px 0 20px"}}>
-            <div style={{fontSize:48}}>{v.i}</div><div style={{fontSize:42,fontWeight:900,color:v.c,marginTop:6}}>{score}%</div>
-            <div style={{fontSize:18,fontWeight:700,color:v.c}}>{v.l}</div>
-            <p style={{color:C.muted,fontSize:13,marginTop:4}}>for {job.title} at {job.company}</p>
-          </div>
-          <div style={{background:C.card2,border:`1px solid ${C.border}`,borderRadius:12,padding:14,marginBottom:20}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",marginBottom:10}}>Score Breakdown</div>
-            {[[`★ Major skills avg ×14`,`${mA}/5`,`+${Math.round(mA*14)} pts`,C.green],[`Minor skills avg ×6`,`${nA}/5`,`+${Math.round(nA*6)} pts`,C.accent],[`Base`,``,`+8 pts`,C.muted]].map(([l,s,pt,c])=>(
-              <div key={l} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"4px 0",borderTop:`1px solid ${C.border}`}}><span style={{color:"#bbc8e0"}}>{l} {s&&<span style={{color:c,fontWeight:600}}>({s})</span>}</span><span style={{color:c,fontWeight:700}}>{pt}</span></div>
-            ))}
-          </div>
-          <h3 style={{fontSize:14,fontWeight:700,marginBottom:10}}>Optimise Your Application</h3>
-          {[["resume","📄","Tailored Resume","AI rewrites for ATS — specific to this role"],["cover","✉️","Cover Letter","Personalised, job-specific cover letter"]].map(([k,ic,l,d])=>(
-            <div key={k} onClick={()=>setOpts(o=>({...o,[k]:!o[k]}))} style={{border:`2px solid ${opts[k]?C.accent:C.border}`,background:opts[k]?`${C.accent}08`:C.card2,borderRadius:12,padding:14,cursor:"pointer",marginBottom:10,display:"flex",gap:12,alignItems:"flex-start"}}>
-              <span style={{fontSize:20}}>{ic}</span>
-              <div style={{flex:1}}><div style={{fontWeight:600,fontSize:13}}>{l}</div><div style={{color:C.muted,fontSize:12,marginTop:2}}>{d}</div></div>
-              <div style={{width:20,height:20,borderRadius:4,border:`2px solid ${opts[k]?C.accent:C.muted}`,background:opts[k]?C.accent:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{opts[k]&&<span style={{color:"#fff",fontSize:11}}>✓</span>}</div>
-            </div>
-          ))}
-          <button style={{...S.btn,width:"100%",padding:14,opacity:(opts.resume||opts.cover)?1:.4}} disabled={!opts.resume&&!opts.cover} onClick={tailor}>✨ Generate with AI →</button>
-        </div>
-      </div>
-    );
-  }
-
-  if(phase==="applied")return(
-    <div style={{maxWidth:560,margin:"0 auto"}}>
-      <div style={{...S.card,textAlign:"center",padding:"40px 24px"}}>
-        <div style={{fontSize:60,marginBottom:14}}>🎉</div>
-        <div style={{fontSize:24,fontWeight:900,color:C.green,marginBottom:8}}>Application Submitted!</div>
-        <p style={{color:C.muted,fontSize:14,lineHeight:1.7,marginBottom:20}}>Your tailored application for <strong style={{color:C.text}}>{job.title}</strong> at <strong style={{color:C.text}}>{job.company}</strong> has been sent.</p>
-        <div style={{background:`${C.accent}08`,border:`1px solid ${C.accent}25`,borderRadius:12,padding:18,marginBottom:20,textAlign:"left"}}>
-          <div style={{fontSize:13,fontWeight:700,color:C.accentL,marginBottom:8}}>🧠 Prepare for your interview</div>
-          {prepLoading?<Spinner text="Generating questions"/>:
-          interviewPrep?(
-            <div>{interviewPrep.questions.map((q,i)=>(
-              <div key={i} style={{background:C.card2,borderRadius:10,padding:"10px 12px",marginBottom:8}}>
-                <div style={{display:"flex",gap:8,marginBottom:4}}><span style={{color:C.accent,fontWeight:800,fontSize:12,flexShrink:0}}>Q{i+1}</span><span style={{fontSize:13,fontWeight:600}}>{q.q}</span></div>
-                <div style={{display:"flex",gap:8}}><span style={{background:`${C.purple}20`,color:C.purple,fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,flexShrink:0}}>{q.framework}</span><span style={{fontSize:11,color:C.muted}}>{q.hint}</span></div>
-              </div>
-            ))}</div>
-          ):<button style={{...S.btn,width:"100%"}} onClick={genPrep}>Generate Interview Questions →</button>}
-        </div>
-        <button style={{...S.btnO,width:"100%"}} onClick={onBack}>← Back to Dashboard</button>
-      </div>
-    </div>
-  );
-
-  return(
-    <div style={{maxWidth:680,margin:"0 auto"}}>
-      <button style={{...S.btnO,marginBottom:18,padding:"7px 14px",fontSize:12}} onClick={()=>setPhase("tailor")}>← Back</button>
-      {loading?<div style={S.card}><Spinner text="AI tailoring your application"/></div>:
-      result&&(
-        <div style={S.card}>
-          <Tag c="green" ch="Application Ready"/>
-          <h2 style={{fontSize:20,fontWeight:900,margin:"10px 0 6px"}}>Your Application is Ready</h2>
-          <p style={{color:C.muted,fontSize:13,marginBottom:18}}>{result.summary}</p>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
-            {[["🤖 ATS Score",result.atsScore,result.atsNotes,C.accent],["👔 Hiring Manager",result.hmScore,result.hmNotes,C.green]].map(([l,sc,notes,c])=>(
-              <div key={l} style={{background:C.card2,borderRadius:12,padding:14,border:`1px solid ${C.border}`}}>
-                <div style={{fontSize:12,color:C.muted,marginBottom:4}}>{l}</div>
-                <div style={{fontSize:28,fontWeight:900,color:c}}>{sc}<span style={{fontSize:12,fontWeight:400}}>/100</span></div>
-                {notes?.map((n,i)=><div key={i} style={{fontSize:11,color:"#bbc8e0",padding:"3px 0",borderTop:i>0?`1px solid ${C.border}`:"none"}}>✓ {n}</div>)}
-              </div>
-            ))}
-          </div>
-          {opts.resume&&result.tailoredResume&&(
-            <div style={{marginBottom:14}}>
-              <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>📄 Tailored Resume</div>
-              <pre style={{...S.ta,whiteSpace:"pre-wrap",fontSize:12,lineHeight:1.6,maxHeight:160,overflowY:"auto",display:"block",padding:12}}>{result.tailoredResume}</pre>
-            </div>
-          )}
-          {opts.cover&&result.coverLetter&&(
-            <div style={{marginBottom:14}}>
-              <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>✉️ Cover Letter</div>
-              <pre style={{...S.ta,whiteSpace:"pre-wrap",fontSize:12,lineHeight:1.6,maxHeight:130,overflowY:"auto",display:"block",padding:12}}>{result.coverLetter}</pre>
-            </div>
-          )}
-          <button style={{...S.btn,width:"100%"}} onClick={()=>{onApply(job,score,result,skills);setPhase("applied");toast("Application sent! 🎉","HR team notified","success","🚀");}}>✅ Submit Application</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── SEEKER FEEDBACK MODAL ──
-function SeekerFeedbackModal({app,onSubmit,onDismiss}){
-  const [step,setStep]=useState(0);
-  const [o,setO]=useState({type:null,roundsReached:[],finalOutcome:null,salaryOffered:"",rejectedAt:null,reason:null,notes:""});
-  const upd=(k,v)=>setO(x=>({...x,[k]:v}));
-  const toggleRound=r=>upd("roundsReached",o.roundsReached.includes(r)?o.roundsReached.filter(x=>x!==r):[...o.roundsReached,r]);
-  const steps=["Response","Rounds","Outcome","Notes"];
-  return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"}}>
-      <div style={{...S.card,width:"100%",maxWidth:480,animation:"fadeUp .3s ease"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-          <div><h3 style={{fontSize:16,fontWeight:800,marginBottom:3}}>{app.job.title} at {app.job.company}</h3><p style={{color:C.muted,fontSize:12}}>Applied {app.daysAgo}d ago · Score: <span style={{color:C.accentL,fontWeight:700}}>{app.score}%</span></p></div>
-          <button onClick={onDismiss} style={{...S.btnO,padding:"5px 10px",fontSize:12}}>✕</button>
-        </div>
-        <div style={{display:"flex",gap:5,marginBottom:18}}>{steps.map((l,i)=><div key={i} style={{flex:1,height:3,borderRadius:2,background:i<=step?C.accent:C.border,transition:".3s"}}/>)}</div>
-        {step===0&&(
-          <div>
-            <p style={{fontWeight:700,fontSize:14,marginBottom:12}}>Did you hear back from {app.job.company}?</p>
-            <div style={{display:"grid",gap:8}}>{RESPONSE_TYPES.map(rt=><button key={rt.id} onClick={()=>{upd("type",rt.id);setStep(rt.id==="interview"?1:rt.id==="rejected"?1:2);}} style={S.btnT(o.type===rt.id,rt.color)}><div style={{fontWeight:700,fontSize:13}}>{rt.label}</div><div style={{fontSize:11,color:C.muted,marginTop:2}}>{rt.desc}</div></button>)}</div>
-          </div>
-        )}
-        {step===1&&(
-          <div>
-            <p style={{fontWeight:700,fontSize:14,marginBottom:12}}>{o.type==="interview"?"Which rounds did you reach?":"Which round were you rejected at?"}</p>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-              {INTERVIEW_ROUNDS.map(r=>{const sel=o.type==="interview"?o.roundsReached.includes(r.id):o.rejectedAt===r.id;return(
-                <button key={r.id} onClick={()=>o.type==="interview"?toggleRound(r.id):upd("rejectedAt",r.id)} style={S.btnT(sel,o.type==="interview"?C.green:C.danger)}>
-                  <span style={{fontSize:16,display:"block",marginBottom:3}}>{r.icon}</span><span style={{fontSize:12,fontWeight:700}}>{r.label}</span>
-                </button>
-              );})}
-            </div>
-            {o.type==="rejected"&&(
-              <div style={{marginBottom:12}}>
-                <label style={S.lbl}>Reason given</label>
-                <div style={{display:"grid",gap:5}}>{REJECTION_REASONS.map(r=><button key={r} onClick={()=>upd("reason",r)} style={S.btnT(o.reason===r,C.warn)}><span style={{fontSize:12}}>{r}</span></button>)}</div>
-              </div>
-            )}
-            <div style={{display:"flex",gap:8}}><button style={S.btnO} onClick={()=>setStep(0)}>← Back</button><button style={{...S.btn,flex:1}} disabled={o.type==="interview"?!o.roundsReached.length:!o.rejectedAt} onClick={()=>setStep(2)}>Next →</button></div>
-          </div>
-        )}
-        {step===2&&(
-          <div>
-            <p style={{fontWeight:700,fontSize:14,marginBottom:12}}>Final outcome?</p>
-            {o.type==="interview"&&<div style={{display:"grid",gap:8,marginBottom:14}}>{[["offer","🎉 Received an Offer",C.green],["rejected","❌ Was Rejected",C.danger],["pending","⏳ Still in Process",C.warn]].map(([id,l,c])=><button key={id} onClick={()=>upd("finalOutcome",id)} style={S.btnT(o.finalOutcome===id,c)}><span style={{fontWeight:700,fontSize:13}}>{l}</span></button>)}</div>}
-            {o.finalOutcome==="offer"&&<div style={{marginBottom:14}}><label style={S.lbl}>Salary Offered</label><input style={S.inp} placeholder="e.g. ₹24 LPA" value={o.salaryOffered} onChange={e=>upd("salaryOffered",e.target.value)}/></div>}
-            {(o.type==="ghosted"||o.type==="waiting")&&<div style={{background:`${C.muted}10`,border:`1px solid ${C.border}`,borderRadius:10,padding:14,marginBottom:14}}><p style={{fontSize:13,color:C.muted}}>Your data point still helps us understand response rates by company and role.</p></div>}
-            <div style={{display:"flex",gap:8}}><button style={S.btnO} onClick={()=>setStep(o.type==="interview"||o.type==="rejected"?1:0)}>← Back</button><button style={{...S.btn,flex:1}} onClick={()=>setStep(3)}>Next →</button></div>
-          </div>
-        )}
-        {step===3&&(
-          <div>
-            <p style={{fontWeight:700,fontSize:14,marginBottom:6}}>Anything else to note?</p>
-            <p style={{color:C.muted,fontSize:12,marginBottom:12}}>Optional — more context improves predictions for future candidates.</p>
-            <textarea style={{...S.ta,minHeight:80,marginBottom:14}} placeholder="e.g. Case study was harder than expected…" value={o.notes} onChange={e=>upd("notes",e.target.value)}/>
-            <div style={{background:`${C.green}08`,border:`1px solid ${C.green}20`,borderRadius:10,padding:12,marginBottom:14}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.green,marginBottom:6}}>🔒 How your data is used</div>
-              {["Skill ratings cross-referenced with outcome to improve pass-rate predictions","Salary data anonymised for market benchmarking","You are never identified in aggregate metrics"].map((t,i)=>(
-                <div key={i} style={{fontSize:11,color:"#aabbd0",padding:"3px 0",borderTop:i>0?`1px solid ${C.border}`:"none",display:"flex",gap:8}}><span style={{color:C.green}}>✓</span>{t}</div>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:8}}><button style={S.btnO} onClick={()=>setStep(2)}>← Back</button><button style={{...S.btnG,flex:1}} onClick={()=>onSubmit({...o,reportedAt:new Date().toISOString()})}>✅ Submit Outcome</button></div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── SEEKER TRACKER ──
-function SeekerTracker({applications,onFeedback,toast}){
-  const [activeFeedback,setActiveFeedback]=useState(null);
-  const nudge=app=>{
-    if(app.seekerOutcome)return null;
-    const d=app.daysAgo||7;
-    if(d>=45)return{label:"45-day final nudge",color:C.danger,urgent:true};
-    if(d>=21)return{label:"21-day follow-up due",color:C.warn,urgent:true};
-    if(d>=7) return{label:"7-day check-in due",color:C.warn,urgent:false};
-    return null;
-  };
-  const pending=applications.filter(a=>!a.seekerOutcome);
-  const done=applications.filter(a=>a.seekerOutcome);
-  return(
-    <div>
-      {activeFeedback&&<SeekerFeedbackModal app={activeFeedback} onSubmit={o=>{onFeedback(activeFeedback.id,o);setActiveFeedback(null);toast("Outcome reported! 🙏","Your data makes EasyJob smarter","success","📊");}} onDismiss={()=>setActiveFeedback(null)}/>}
-      <div style={{marginBottom:20}}>
-        <Tag c="default" ch="My Applications"/>
-        <h2 style={{fontSize:24,fontWeight:900,margin:"10px 0 4px"}}>Application Tracker</h2>
-        <p style={{color:C.muted,fontSize:14}}>{pending.length} awaiting feedback · {done.length} reported</p>
-      </div>
-      {!applications.length&&<div style={{...S.card,textAlign:"center",padding:40}}><div style={{fontSize:44,marginBottom:12}}>📭</div><div style={{fontWeight:700,marginBottom:6}}>No applications yet</div><div style={{color:C.muted,fontSize:13}}>Apply to jobs and track them here.</div></div>}
-      {pending.length>0&&(
-        <div style={{marginBottom:24}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.warn,textTransform:"uppercase",letterSpacing:.5,marginBottom:10}}>⏳ Awaiting Your Report</div>
-          <div style={{display:"grid",gap:10}}>
-            {pending.map(app=>{const n=nudge(app);const sc=STAGE_COLORS[app.stage||"Applied"]||C.muted;return(
-              <div key={app.id} style={{...S.card,border:`1px solid ${n?.urgent?C.warn:C.border}`}}>
-                <div style={{display:"flex",gap:12,alignItems:"center"}}>
-                  <PctRing pct={app.score} size={48}/>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:14}}>{app.job.title}</div>
-                    <div style={{color:C.muted,fontSize:12,marginTop:2}}>{app.job.company} · {app.job.salary}</div>
-                    <div style={{marginTop:6,display:"flex",gap:6,flexWrap:"wrap"}}>
-                      <span style={{background:`${sc}18`,color:sc,border:`1px solid ${sc}40`,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700}}>{app.stage||"Applied"}</span>
-                      {n&&<span style={{background:`${n.color}18`,color:n.color,border:`1px solid ${n.color}40`,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700}}>{n.urgent?"🔴":"🟡"} {n.label}</span>}
-                      <span style={{background:C.card2,color:C.muted,borderRadius:20,padding:"2px 10px",fontSize:10}}>Applied {app.daysAgo}d ago</span>
-                    </div>
-                  </div>
-                  <button style={{...S.btn,padding:"8px 14px",fontSize:12,flexShrink:0}} onClick={()=>setActiveFeedback(app)}>Report →</button>
-                </div>
-              </div>
-            );})}
-          </div>
-        </div>
-      )}
-      {done.length>0&&(
-        <div>
-          <div style={{fontSize:11,fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:.5,marginBottom:10}}>✓ Outcomes Reported</div>
-          <div style={{display:"grid",gap:10}}>
-            {done.map(app=>{const oc=app.seekerOutcome;const td=RESPONSE_TYPES.find(r=>r.id===oc.type);return(
-              <div key={app.id} style={{...S.card,opacity:.85}}>
-                <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                  <PctRing pct={app.score} size={44}/>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:14}}>{app.job.title} at {app.job.company}</div>
-                    <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
-                      <span style={{background:`${td?.color}18`,color:td?.color,border:`1px solid ${td?.color}40`,borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:700}}>{td?.label}</span>
-                      {oc.roundsReached?.map(r=><span key={r} style={{background:`${C.accent}15`,color:C.accentL,borderRadius:20,padding:"3px 10px",fontSize:10}}>{INTERVIEW_ROUNDS.find(x=>x.id===r)?.label}</span>)}
-                      {oc.finalOutcome==="offer"&&<span style={{background:`${C.green}15`,color:C.green,borderRadius:20,padding:"3px 10px",fontSize:10,fontWeight:700}}>🎉 {oc.salaryOffered}</span>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );})}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── MARKET INSIGHTS ──
-function MarketInsights({profile}){
-  const jobs=JOBS.filter(j=>profile.buckets.includes(j.bucket)||profile.buckets.includes("Mixed"));
-  const sf={};jobs.forEach(j=>j.skills.forEach(s=>{sf[s.name]=(sf[s.name]||0)+(s.major?2:1);}));
-  const top=Object.entries(sf).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const maxF=top[0]?.[1]||1;
-  return(
-    <div>
-      <Tag c="gold" ch="Market Intelligence"/>
-      <h2 style={{fontSize:24,fontWeight:900,margin:"10px 0 4px"}}>Market Insights</h2>
-      <p style={{color:C.muted,fontSize:14,marginBottom:24}}>Based on {jobs.length} live roles in your interest areas</p>
-      <div style={S.card}>
-        <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:14}}>📊 Top In-Demand Skills</div>
-        {top.map(([skill,freq])=>(
-          <div key={skill} style={{marginBottom:10}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:3}}><span style={{color:C.text}}>{skill}</span><span style={{color:C.gold,fontWeight:700}}>{freq} roles</span></div>
-            <div style={{background:C.card2,borderRadius:3,height:6,overflow:"hidden"}}><div style={{background:C.gold,width:`${(freq/maxF)*100}%`,height:"100%",borderRadius:3}}/></div>
-          </div>
-        ))}
-      </div>
-      <div style={{...S.card,marginTop:16,background:`${C.purple}08`,border:`1px solid ${C.purple}25`}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.purple,marginBottom:10}}>💡 EasyJob Intelligence</div>
-        {["Candidates scoring 80%+ convert to interviews at 6.5x the rate of those below 40%.","Completing the full skill assessment improves AI tailoring accuracy by 34%.","Applications in the first 72 hours have 2.8x higher response rates."].map((txt,i)=>(
-          <div key={i} style={{fontSize:12,color:"#bbc8e0",padding:"8px 0",borderTop:i>0?`1px solid ${C.border}`:"none",lineHeight:1.6}}><span style={{color:C.purple,fontWeight:700}}>→ </span>{txt}</div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── HR FEEDBACK MODAL ──
-function HRFeedbackModal({app,onSubmit,onDismiss}){
-  const [rounds,setRounds]=useState(app.hrOutcome?.rounds||[{round:"hr_screen",passed:null,notes:""}]);
-  const [finalDecision,setFinalDecision]=useState(app.hrOutcome?.finalDecision||null);
-  const [calibration,setCalibration]=useState(app.hrOutcome?.skillCalibration||{});
-  const [accuracy,setAccuracy]=useState(app.hrOutcome?.accuracyNotes||"");
-  const addRound=()=>setRounds(r=>[...r,{round:"",passed:null,notes:""}]);
-  const updRound=(i,k,v)=>setRounds(r=>r.map((x,idx)=>idx===i?{...x,[k]:v}:x));
-  return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"}}>
-      <div style={{...S.card,width:"100%",maxWidth:560,animation:"fadeUp .3s ease",maxHeight:"90vh",overflowY:"auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-          <div><Tag c="green" ch="HR Outcome Report"/><h3 style={{fontSize:16,fontWeight:800,margin:"8px 0 3px"}}>{app.candidateName}</h3><p style={{color:C.muted,fontSize:12}}>{app.job.title} · EasyJob: <span style={{color:C.accentL,fontWeight:700}}>{app.score}%</span></p></div>
-          <button onClick={onDismiss} style={{...S.btnO,padding:"5px 10px",fontSize:12}}>✕</button>
-        </div>
-        <div style={{background:C.card2,border:`1px solid ${C.border}`,borderRadius:12,padding:14,marginBottom:16}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Candidate Self-Assessment</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-            {Object.entries(app.skillRatings||{}).map(([sk,r])=>(
-              <div key={sk} style={{display:"flex",justifyContent:"space-between",background:C.card,borderRadius:8,padding:"6px 10px"}}>
-                <span style={{fontSize:11}}>{sk}</span><span style={{fontSize:11,fontWeight:700,color:SKILL_COLORS[r]||C.muted}}>{r}/5</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5,marginBottom:10}}>Interview Round Outcomes</div>
-          {rounds.map((r,i)=>(
-            <div key={i} style={{background:C.card2,border:`1px solid ${C.border}`,borderRadius:12,padding:14,marginBottom:10}}>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-                <div><label style={S.lbl}>Round</label>
-                  <select value={r.round} onChange={e=>updRound(i,"round",e.target.value)} style={{...S.inp,cursor:"pointer"}}>
-                    <option value="">Select round</option>{INTERVIEW_ROUNDS.map(ir=><option key={ir.id} value={ir.id}>{ir.label}</option>)}
-                  </select>
-                </div>
-                <div><label style={S.lbl}>Result</label>
-                  <div style={{display:"flex",gap:6,marginTop:2}}>
-                    {[["passed","✓ Passed",C.green],["failed","✗ Failed",C.danger]].map(([val,lbl,c])=>(
-                      <button key={val} onClick={()=>updRound(i,"passed",val==="passed")} style={{flex:1,padding:"8px 6px",borderRadius:8,border:`2px solid ${r.passed===(val==="passed")?c:C.border}`,background:r.passed===(val==="passed")?`${c}20`:"none",color:r.passed===(val==="passed")?c:C.muted,fontWeight:700,fontSize:12,cursor:"pointer",fontFamily:F}}>{lbl}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <label style={S.lbl}>Interviewer Notes</label>
-              <textarea style={{...S.ta,minHeight:50}} placeholder="e.g. Strong SQL but struggled with system design…" value={r.notes} onChange={e=>updRound(i,"notes",e.target.value)}/>
-            </div>
-          ))}
-          <button onClick={addRound} style={{...S.btnO,width:"100%",fontSize:12,padding:"8px"}}>+ Add Round</button>
-        </div>
-        <div style={{background:`${C.gold}08`,border:`1px solid ${C.gold}25`,borderRadius:12,padding:14,marginBottom:16}}>
-          <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:4}}>⭐ Skill Accuracy Calibration</div>
-          <p style={{fontSize:11,color:C.muted,marginBottom:12,lineHeight:1.6}}>Did self-ratings match actual performance? This powers the "SQL 4/5 → X% pass rate" prediction model.</p>
-          {Object.entries(app.skillRatings||{}).filter(([,r])=>r>=3).slice(0,4).map(([skill,selfR])=>(
-            <div key={skill} style={{marginBottom:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:6}}><span style={{fontWeight:600}}>{skill}</span><span style={{color:C.muted}}>Self-rated: <span style={{color:C.accentL,fontWeight:700}}>{selfR}/5</span></span></div>
-              <div style={{display:"flex",gap:6}}>
-                {[["overrated","👆 Overrated",C.danger],["accurate","✓ Accurate",C.green],["underrated","👇 Underrated",C.purple]].map(([val,lbl,c])=>(
-                  <button key={val} onClick={()=>setCalibration(s=>({...s,[skill]:val}))} style={{flex:1,padding:"7px 4px",borderRadius:8,border:`2px solid ${calibration[skill]===val?c:C.border}`,background:calibration[skill]===val?`${c}20`:"none",color:calibration[skill]===val?c:C.muted,fontWeight:700,fontSize:10,cursor:"pointer",fontFamily:F}}>{lbl}</button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{marginBottom:16}}>
-          <label style={S.lbl}>Final Decision</label>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-            {[["offer_extended","🎉 Offer Extended",C.green],["rejected","❌ Rejected",C.danger],["on_hold","⏸️ On Hold",C.warn],["hired","✅ Hired & Joined",C.teal]].map(([val,lbl,c])=>(
-              <button key={val} onClick={()=>setFinalDecision(val)} style={S.btnT(finalDecision===val,c)}><span style={{fontSize:12,fontWeight:700}}>{lbl}</span></button>
-            ))}
-          </div>
-        </div>
-        <div style={{marginBottom:16}}>
-          <label style={S.lbl}>EasyJob Score Accuracy</label>
-          <div style={{display:"flex",gap:8}}>
-            {[["very_accurate","Very Accurate"],["somewhat","Somewhat"],["inaccurate","Inaccurate"]].map(([val,lbl])=>(
-              <button key={val} onClick={()=>setAccuracy(val)} style={{flex:1,...S.btnT(accuracy===val,C.accent),textAlign:"center"}}><span style={{fontSize:12}}>{lbl}</span></button>
-            ))}
-          </div>
-        </div>
-        <button style={{...S.btnG,width:"100%",padding:14}} onClick={()=>onSubmit({rounds,finalDecision,skillCalibration:calibration,accuracyNotes:accuracy,reportedAt:new Date().toISOString()})}>✅ Submit Outcome Report</button>
-      </div>
-    </div>
-  );
-}
-
-// ── HR PIPELINE ──
-function HRPipeline({applications,onStageChange,onHROutcome,toast}){
-  const [selected,setSelected]=useState(null);
-  const [hrFeedbackFor,setHrFeedbackFor]=useState(null);
-  const [analysis,setAnalysis]=useState({});
-  const [aiLoading,setAiLoading]=useState({});
-  const [filter,setFilter]=useState("All");
-
-  const analyze=async app=>{
-    if(analysis[app.id])return;
-    setAiLoading(l=>({...l,[app.id]:true}));
-    const sys=`You are an expert HR analyst. Return ONLY valid JSON with keys: recommendation(string: Strongly Recommend|Recommend|Consider|Pass), interviewQuestions(array of 3 strings), redFlags(array of 2 strings), strengths(array of 3 strings), hiringRisk(string: Low|Medium|High)`;
-    const prompt=`Candidate: ${app.candidateName}. Applied: ${app.job.title} at ${app.job.company}. Score: ${app.score}%. Skills: ${Object.entries(app.skillRatings||{}).map(([s,r])=>`${s}:${r}/5`).join(", ")}.`;
-    try{
-      const raw=await callClaude([{role:"user",content:prompt}],sys);
-      setAnalysis(a=>({...a,[app.id]:JSON.parse(raw.replace(/```json|```/g,"").trim())}));
-    }catch{
-      setAnalysis(a=>({...a,[app.id]:{recommendation:"Recommend",interviewQuestions:["Walk me through your core skills for this role","Describe your biggest impact in a similar role","Where is your growth area for this position?"],redFlags:["Self-assessment calibration not yet verified","Limited outcome data for this candidate"],strengths:["Completed full AI assessment","Submitted tailored application","Strong fit score"],hiringRisk:"Medium"}}));
-    }
-    setAiLoading(l=>({...l,[app.id]:false}));
-  };
-
-  const filtered=filter==="All"?applications:applications.filter(a=>a.job.bucket===filter);
-
-  if(!applications.length)return(
-    <div style={{maxWidth:520,margin:"0 auto"}}>
-      <Tag c="green" ch="HR Dashboard"/>
-      <h2 style={{fontSize:24,fontWeight:900,margin:"10px 0 20px"}}>Candidate Pipeline</h2>
-      <div style={{...S.card,textAlign:"center",padding:"40px 24px"}}>
-        <div style={{fontSize:52,marginBottom:14}}>📭</div>
-        <h3 style={{fontSize:18,fontWeight:800,marginBottom:8}}>Pipeline is Empty</h3>
-        <p style={{color:C.muted,fontSize:13,lineHeight:1.7,marginBottom:20}}>Candidates who apply through EasyJob appear here — pre-scored, skill-assessed, ready for review.</p>
-        <div style={{...S.card,padding:"12px 16px",background:`${C.accent}08`,border:`1px solid ${C.accent}20`,textAlign:"left",display:"flex",gap:12,alignItems:"center"}}><span style={{fontSize:20}}>💡</span><p style={{fontSize:13,color:"#bbc8e0",margin:0}}>Switch to <strong style={{color:C.accent}}>👤 Job Seeker</strong> mode, apply to a role, then come back here.</p></div>
-      </div>
-    </div>
-  );
-
-  if(selected){
-    const app=selected;const ai=analysis[app.id];const stage=app.stage||"Applied";const sc=STAGE_COLORS[stage]||C.muted;
-    return(
-      <div style={{maxWidth:700,margin:"0 auto"}}>
-        {hrFeedbackFor&&<HRFeedbackModal app={hrFeedbackFor} onSubmit={o=>{onHROutcome(hrFeedbackFor.id,o);setHrFeedbackFor(null);setSelected(prev=>({...prev,hrOutcome:o}));toast("Outcome logged","Calibration updated","success","📊");}} onDismiss={()=>setHrFeedbackFor(null)}/>}
-        <button style={{...S.btnO,marginBottom:16,padding:"7px 14px",fontSize:12}} onClick={()=>setSelected(null)}>← Pipeline</button>
-        <div style={S.card}>
-          <div style={{display:"flex",gap:14,alignItems:"flex-start",marginBottom:20}}>
-            <div style={{width:50,height:50,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},${C.green})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:900,flexShrink:0}}>{app.candidateName[0]}</div>
-            <div style={{flex:1}}><h2 style={{fontSize:19,fontWeight:900,marginBottom:3}}>{app.candidateName}</h2><p style={{color:C.muted,fontSize:13}}>Applied for <strong style={{color:C.text}}>{app.job.title}</strong> at {app.job.company}</p></div>
-            <PctRing pct={app.score} size={56}/>
-          </div>
-          <div style={{background:C.card2,border:`1px solid ${C.border}`,borderRadius:12,padding:14,marginBottom:14}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5,marginBottom:10}}>Pipeline Stage</div>
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {PIPELINE_STAGES.map(s=>{const c=STAGE_COLORS[s]||C.muted;return(
-                <button key={s} onClick={()=>{onStageChange(app.id,s);setSelected(prev=>({...prev,stage:s}));toast("Stage updated",`${app.candidateName} → ${s}`,s==="Rejected"?"warn":"success","✅");}} style={{background:stage===s?`${c}25`:"none",color:stage===s?c:C.muted,border:`1px solid ${stage===s?c:C.border}`,borderRadius:8,padding:"6px 12px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:F}}>{s}</button>
-              );})}
-            </div>
-          </div>
-          <div style={{marginBottom:14}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Self-Assessed Skills</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-              {Object.entries(app.skillRatings||{}).map(([sk,r])=>(
-                <div key={sk} style={{background:C.card2,borderRadius:8,padding:"7px 12px",display:"flex",justifyContent:"space-between"}}>
-                  <span style={{fontSize:11}}>{sk}</span><span style={{fontSize:11,color:SKILL_COLORS[r]||C.muted,fontWeight:700}}>{SKILL_LABELS[r]}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          {app.hrOutcome?.rounds?.length>0&&(
-            <div style={{background:`${C.green}08`,border:`1px solid ${C.green}20`,borderRadius:12,padding:14,marginBottom:14}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.green,marginBottom:8}}>✓ Outcome Logged</div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {app.hrOutcome.rounds.map((r,i)=><span key={i} style={{background:r.passed?`${C.green}15`:`${C.danger}15`,color:r.passed?C.green:C.danger,border:`1px solid ${r.passed?`${C.green}30`:`${C.danger}30`}`,borderRadius:8,padding:"3px 10px",fontSize:11,fontWeight:600}}>{INTERVIEW_ROUNDS.find(x=>x.id===r.round)?.label} {r.passed?"✓":"✗"}</span>)}
-                {app.hrOutcome.finalDecision&&<span style={{background:`${C.gold}15`,color:C.gold,border:`1px solid ${C.gold}30`,borderRadius:8,padding:"3px 10px",fontSize:11,fontWeight:700}}>{app.hrOutcome.finalDecision.replace("_"," ")}</span>}
-              </div>
-            </div>
-          )}
-          <button onClick={()=>setHrFeedbackFor(app)} style={{...app.hrOutcome?S.btnO:S.btn,width:"100%",marginBottom:14}}>
-            {app.hrOutcome?"✏️ Edit Outcome Log":"⭐ Log Interview Outcome"}
-          </button>
-          {!ai?(
-            aiLoading[app.id]?<Spinner text="AI analysing candidate"/>:
-            <button style={{...S.btn,width:"100%",background:C.purple}} onClick={()=>analyze(app)}>🤖 Run AI Analysis</button>
-          ):(
-            <div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-                {[["Recommendation",ai.recommendation,ai.recommendation==="Strongly Recommend"?C.green:ai.recommendation==="Recommend"?C.accentL:ai.recommendation==="Consider"?C.warn:C.danger],["Hiring Risk",ai.hiringRisk,ai.hiringRisk==="Low"?C.green:ai.hiringRisk==="Medium"?C.warn:C.danger]].map(([l,val,c])=>(
-                  <div key={l} style={{background:C.card2,border:`1px solid ${C.border}`,borderRadius:12,padding:14,textAlign:"center"}}><div style={{fontSize:11,color:C.muted,marginBottom:4,textTransform:"uppercase"}}>{l}</div><div style={{fontSize:16,fontWeight:800,color:c}}>{val}</div></div>
-                ))}
-              </div>
-              <div style={{marginBottom:12}}><div style={{fontSize:13,fontWeight:700,color:C.green,marginBottom:8}}>✦ Strengths</div>{ai.strengths?.map((s,i)=><div key={i} style={{fontSize:12,color:"#bbc8e0",padding:"4px 0",borderBottom:`1px solid ${C.border}`,display:"flex",gap:8}}><span style={{color:C.green}}>→</span>{s}</div>)}</div>
-              {ai.redFlags?.length>0&&<div style={{marginBottom:12}}><div style={{fontSize:13,fontWeight:700,color:C.warn,marginBottom:8}}>⚠ Points to Probe</div>{ai.redFlags.map((f,i)=><div key={i} style={{fontSize:12,color:"#bbc8e0",padding:"4px 0",borderBottom:`1px solid ${C.border}`,display:"flex",gap:8}}><span style={{color:C.warn}}>→</span>{f}</div>)}</div>}
-              <div style={{marginBottom:12}}><div style={{fontSize:13,fontWeight:700,color:C.accentL,marginBottom:8}}>💬 Interview Questions</div>{ai.interviewQuestions?.map((q,i)=><div key={i} style={{background:C.card2,borderRadius:8,padding:"10px 12px",marginBottom:8,fontSize:12,color:"#bbc8e0",display:"flex",gap:8}}><span style={{color:C.accent,fontWeight:700,flexShrink:0}}>Q{i+1}</span>{q}</div>)}</div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return(
-    <div>
-      <div style={{marginBottom:20}}>
-        <Tag c="green" ch="HR Dashboard"/>
-        <h2 style={{fontSize:24,fontWeight:900,margin:"10px 0 4px"}}>Candidate Pipeline</h2>
-        <p style={{color:C.muted,fontSize:14}}>{applications.length} candidates · Log outcomes to build prediction accuracy</p>
-      </div>
-      <div style={{background:`${C.gold}08`,border:`1px solid ${C.gold}25`,borderRadius:12,padding:14,marginBottom:16,display:"flex",gap:12,alignItems:"center"}}>
-        <span style={{fontSize:22,flexShrink:0}}>⭐</span>
-        <div style={{flex:1}}><div style={{fontWeight:700,fontSize:13,color:C.gold,marginBottom:2}}>Log outcomes → build the data moat</div><div style={{fontSize:11,color:C.muted}}>Every interview result logged improves EasyJob's skill pass-rate predictions.</div></div>
-        <div style={{fontSize:13,fontWeight:800,color:C.gold,flexShrink:0}}>{applications.filter(a=>a.hrOutcome).length}/{applications.length}<div style={{fontSize:10,fontWeight:400,color:C.muted,textAlign:"center"}}>logged</div></div>
-      </div>
-      <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
-        {["All",...BUCKETS.filter(b=>b!=="Mixed")].map(b=><button key={b} onClick={()=>setFilter(b)} style={{background:filter===b?C.accent:"none",color:filter===b?"#fff":C.muted,border:`1px solid ${filter===b?C.accent:C.border}`,borderRadius:8,padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:F}}>{b}</button>)}
-      </div>
-      <div style={{display:"grid",gap:10}}>
-        {filtered.map(app=>{const stage=app.stage||"Applied";const sc=STAGE_COLORS[stage]||C.muted;const hasO=!!app.hrOutcome;return(
-          <div key={app.id} style={{...S.card,cursor:"pointer",transition:".2s",border:`1px solid ${hasO?`${C.green}30`:C.border}`}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor=C.green} onMouseLeave={e=>e.currentTarget.style.borderColor=hasO?`${C.green}30`:C.border}
-            onClick={()=>{setSelected(app);analyze(app);}}>
-            <div style={{display:"flex",gap:12,alignItems:"center"}}>
-              <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},${C.green})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,flexShrink:0}}>{app.candidateName[0]}</div>
-              <div style={{flex:1}}>
-                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}><span style={{fontWeight:700,fontSize:14}}>{app.candidateName}</span><span style={{background:`${sc}18`,color:sc,border:`1px solid ${sc}40`,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700}}>{stage}</span>{hasO&&<span style={{background:`${C.green}15`,color:C.green,borderRadius:20,padding:"2px 10px",fontSize:10,fontWeight:700}}>✓ Logged</span>}</div>
-                <div style={{color:C.muted,fontSize:12,marginTop:3}}>{app.job.title} at {app.job.company}</div>
-                <div style={{display:"flex",gap:5,marginTop:4,flexWrap:"wrap"}}>{Object.entries(app.skillRatings||{}).filter(([,r])=>r>=4).slice(0,3).map(([s,r])=><span key={s} style={{background:`${C.green}10`,color:C.green,fontSize:9,padding:"2px 7px",borderRadius:5}}>{s}: {r}/5</span>)}</div>
-              </div>
-              <PctRing pct={app.score} size={44}/>
-              <span style={{color:C.muted,fontSize:18}}>›</span>
-            </div>
-          </div>
-        );})}
-      </div>
-    </div>
-  );
-}
-
-// ── DATA MOAT DASHBOARD ──
-function DataMoatDashboard({outcomes,applications}){
-  const [selSkill,setSelSkill]=useState("SQL");
-  const [selRound,setSelRound]=useState("technical");
-  const skills=[...new Set(outcomes.map(o=>o.skill))];
-  const getRate=(skill,rating,round)=>{
-    const rel=outcomes.filter(o=>o.skill===skill&&o.rating===rating&&o.round===round);
-    if(!rel.length)return null;
-    return{rate:Math.round((rel.filter(o=>o.passed).length/rel.length)*100),n:rel.length};
-  };
-  return(
-    <div>
-      <Tag c="gold" ch="Data Moat Engine"/>
-      <h2 style={{fontSize:24,fontWeight:900,margin:"10px 0 4px"}}>Prediction Intelligence</h2>
-      <p style={{color:C.muted,fontSize:14,marginBottom:24}}>Live metrics built from seeker + HR outcome data.</p>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:24}}>
-        {[[outcomes.length,"📊","Data Points",C.accent],[skills.length,"🧠","Skills Tracked",C.purple],[applications.filter(a=>a.hrOutcome).length,"⭐","HR Outcomes",C.gold],[applications.filter(a=>a.seekerOutcome).length,"✓","Seeker Reports",C.green]].map(([v,ic,l,c],i)=>(
-          <div key={i} style={{...S.card,animation:`fadeUp .3s ease ${i*.07}s both`}}><div style={{fontSize:20,marginBottom:8}}>{ic}</div><div style={{fontSize:24,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:12,fontWeight:700,color:C.text,marginTop:4}}>{l}</div></div>
-        ))}
-      </div>
-      <div style={{...S.card,marginBottom:20,background:`${C.gold}06`,border:`1px solid ${C.gold}25`}}>
-        <h3 style={{fontSize:16,fontWeight:800,color:C.gold,marginBottom:4}}>⭐ Skill Rating → Pass Rate Predictor</h3>
-        <p style={{color:C.muted,fontSize:13,marginBottom:16,lineHeight:1.6}}>When a candidate self-rates a skill at X/5, what is their actual pass rate at each interview round? This is what employers pay for.</p>
-        <div style={{display:"flex",gap:10,marginBottom:18,flexWrap:"wrap"}}>
-          <div><label style={S.lbl}>Skill</label><select value={selSkill} onChange={e=>setSelSkill(e.target.value)} style={{...S.inp,width:"auto",cursor:"pointer"}}>{skills.map(s=><option key={s} value={s}>{s}</option>)}</select></div>
-          <div><label style={S.lbl}>Interview Round</label><select value={selRound} onChange={e=>setSelRound(e.target.value)} style={{...S.inp,width:"auto",cursor:"pointer"}}>{INTERVIEW_ROUNDS.map(r=><option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
-        </div>
-        <div style={{background:C.card2,borderRadius:14,padding:20}}>
-          <div style={{fontSize:13,fontWeight:700,marginBottom:14}}>Pass rate at <span style={{color:C.accentL}}>{INTERVIEW_ROUNDS.find(r=>r.id===selRound)?.label}</span> by self-rated <span style={{color:C.gold}}>{selSkill}</span>:</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:14}}>
-            {[1,2,3,4,5].map(rating=>{
-              const data=getRate(selSkill,rating,selRound);
-              const pct=data?.rate??(rating===5?88:rating===4?72:rating===3?38:rating===2?18:8);
-              const n=data?.n??(rating===5?4:rating===4?6:rating===3?5:rating===2?3:1);
-              const c=pct>=70?C.green:pct>=45?C.warn:C.danger;
-              return(
-                <div key={rating} style={{textAlign:"center",animation:`fadeUp .4s ease ${rating*.07}s both`}}>
-                  <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:8}}>{rating}/5<br/><span style={{fontSize:9,fontWeight:400}}>{SKILL_LABELS[rating]}</span></div>
-                  <div style={{height:100,background:C.border,borderRadius:8,position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",bottom:0,left:0,right:0,background:c,height:`${pct}%`,borderRadius:8,transition:"1.5s ease"}}/>
-                    <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:900,color:"#fff"}}>{pct}%</div>
-                  </div>
-                  <div style={{fontSize:10,color:C.muted,marginTop:4}}>{n} pts</div>
-                </div>
-              );
-            })}
-          </div>
-          {selSkill==="SQL"&&selRound==="technical"&&(
-            <div style={{background:`${C.green}10`,border:`1px solid ${C.green}30`,borderRadius:10,padding:12,display:"flex",gap:10}}>
-              <span style={{fontSize:18,flexShrink:0}}>💡</span>
-              <div style={{fontSize:12,color:"#aabbd0",lineHeight:1.6}}>Candidates who self-rate <strong style={{color:C.text}}>SQL at 4/5</strong> pass the technical round <strong style={{color:C.green}}>72% of the time</strong>. Those rating it 3/5 pass only <strong style={{color:C.warn}}>38%</strong>. That gap saves 3 wasted interviews per role.</div>
-            </div>
-          )}
-        </div>
-      </div>
-      <div style={{...S.card,marginBottom:20}}>
-        <h3 style={{fontSize:15,fontWeight:800,marginBottom:4}}>EasyJob Score → Interview Conversion</h3>
-        <p style={{color:C.muted,fontSize:13,marginBottom:16}}>Does a higher match score predict interview success?</p>
-        {[{range:"80–100%",rate:71,n:12,c:C.green},{range:"60–79%",rate:48,n:28,c:C.accentL},{range:"40–59%",rate:29,n:19,c:C.warn},{range:"0–39%",rate:11,n:8,c:C.danger}].map((d,i)=>(
-          <div key={i} style={{marginBottom:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:4}}><span style={{fontWeight:700}}>Score {d.range}</span><span style={{color:d.c,fontWeight:700}}>{d.rate}% <span style={{color:C.muted,fontWeight:400,fontSize:11}}>({d.n} candidates)</span></span></div>
-            <div style={{background:C.card2,borderRadius:6,height:9,overflow:"hidden"}}><div style={{background:d.c,width:`${d.rate}%`,height:"100%",borderRadius:6,transition:"1.2s ease"}}/></div>
-          </div>
-        ))}
-      </div>
-      <div style={{background:`linear-gradient(135deg,${C.accent}15,${C.green}10)`,border:`1px solid ${C.accent}30`,borderRadius:16,padding:22}}>
-        <div style={{fontSize:26,marginBottom:10}}>🏦</div>
-        <h3 style={{fontSize:17,fontWeight:900,marginBottom:8}}>The CIBIL Moment</h3>
-        <p style={{color:"#aabbd0",fontSize:13,lineHeight:1.75,marginBottom:16}}>CIBIL started as a database of loan repayments. It became the single number every bank trusts before making a credit decision. <strong style={{color:C.text}}>EasyJob is building the same thing — for hiring.</strong></p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
-          {[["500 outcomes","Score is useful","Now",C.warn],["10,000 outcomes","Score is trusted","Month 12",C.accent],["100,000 outcomes","Score is infrastructure","Year 3",C.green]].map(([n,t,s,c])=>(
-            <div key={n} style={{background:`${c}10`,border:`1px solid ${c}30`,borderRadius:12,padding:14,textAlign:"center"}}>
-              <div style={{fontSize:15,fontWeight:900,color:c,marginBottom:4}}>{n}</div>
-              <div style={{fontSize:12,fontWeight:700,color:C.text,marginBottom:3}}>{t}</div>
-              <div style={{fontSize:10,color:C.muted}}>{s}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── LANDING ──
-function Landing({onSeeker,onHR}){
-  return(
-    <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:F,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center"}}>
-      <div style={{maxWidth:680,animation:"fadeUp .6s ease"}}>
-        <div style={{fontSize:11,fontWeight:700,color:C.accent,textTransform:"uppercase",letterSpacing:2.5,marginBottom:14}}>AI-POWERED · TWO-SIDED · CAREER INTELLIGENCE</div>
-        <div style={{fontSize:"clamp(48px,8vw,88px)",fontWeight:900,background:`linear-gradient(135deg,${C.accentL} 0%,${C.green} 100%)`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:-3,lineHeight:1,marginBottom:16}}>EasyJob</div>
-        <p style={{fontSize:16,color:C.muted,lineHeight:1.8,marginBottom:36,maxWidth:480,margin:"0 auto 36px"}}>The platform that tells seekers exactly which roles to pursue — and gives HR teams structured intelligence to hire faster.</p>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,maxWidth:460,margin:"0 auto 40px"}}>
-          {[["👤","I'm Job Seeking","AI match scores, tailored resumes, interview prep",C.accent,"Get Started →",onSeeker],["🏢","I'm Hiring","Pre-screened, skill-assessed candidates",C.green,"View Pipeline →",onHR]].map(([ic,title,desc,c,cta,fn])=>(
-            <div key={title} style={{...S.card,textAlign:"center",padding:26,border:`1px solid ${c}40`,cursor:"pointer",transition:".25s"}} onClick={fn}
-              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.borderColor=c;}}
-              onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.borderColor=`${c}40`;}}>
-              <div style={{fontSize:40,marginBottom:10}}>{ic}</div>
-              <div style={{fontWeight:800,fontSize:15,color:c,marginBottom:8}}>{title}</div>
-              <div style={{fontSize:12,color:C.muted,lineHeight:1.6,marginBottom:16}}>{desc}</div>
-              <span style={{background:c,color:c===C.green?"#04120c":"#fff",borderRadius:8,padding:"7px 18px",fontSize:12,fontWeight:700}}>{cta}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,maxWidth:560,margin:"0 auto 32px"}}>
-          {[["📝","Build Profile","Resume + career areas"],["🧪","Assess Skills","Rate yourself honestly"],["✨","AI Does the Rest","Score, resume, cover letter"]].map((s,i)=>(
-            <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:"18px 14px",position:"relative",animation:`fadeUp .4s ease ${i*.1}s both`}}>
-              <div style={{position:"absolute",top:-10,left:14,background:C.accent,color:"#fff",borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:800}}>STEP {i+1}</div>
-              <div style={{fontSize:26,marginBottom:8,marginTop:4}}>{s[0]}</div>
-              <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>{s[1]}</div>
-              <div style={{fontSize:11,color:C.muted}}>{s[2]}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{display:"flex",gap:24,justifyContent:"center",flexWrap:"wrap"}}>
-          {[["10","Live Roles"],["3.2x","Faster to interview"],["4.1x","Higher conversion"],["SQL 4/5","→ 72% pass rate"]].map(([v,l])=>(
-            <div key={l} style={{textAlign:"center"}}><div style={{fontSize:20,fontWeight:900,color:C.accent}}>{v}</div><div style={{fontSize:11,color:C.muted}}>{l}</div></div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── ROOT APP ──
-export default function App(){
-  const [mode,setMode]=useState("landing");
-  const [seekerView,setSeekerView]=useState("onboard");
-  const [hrView,setHrView]=useState("pipeline");
-  const [profile,setProfile]=useState(null);
-  const [selectedJob,setSelectedJob]=useState(null);
-  const [selectedScore,setSelectedScore]=useState(null);
-  const [applications,setApplications]=useState([]);
-  const [appliedJobIds,setAppliedJobIds]=useState(new Set());
-  const [bookmarkedJobIds,setBookmarkedJobIds]=useState(new Set());
-  const [savedSkillsByJob,setSavedSkillsByJob]=useState({});
-  const [outcomes,setOutcomes]=useState([...SEED_OUTCOMES]);
-  const {toasts,toast,dismiss}=useToasts();
-
-  const handleApply=(job,score,result,skills)=>{
-    const app={id:Date.now(),candidateName:profile.name,profile,job,score,result,skillRatings:skills||savedSkillsByJob[job.id]||{},appliedAt:new Date().toLocaleDateString(),daysAgo:7,stage:"Applied",seekerOutcome:null,hrOutcome:null};
-    setApplications(a=>[...a,app]);
-    setAppliedJobIds(s=>new Set([...s,job.id]));
-  };
-
-  const handleStageChange=(appId,stage)=>{
-    setApplications(a=>a.map(app=>app.id===appId?{...app,stage}:app));
-  };
-
-  const handleToggleBookmark=jobId=>{
-    setBookmarkedJobIds(prev=>{const next=new Set(prev);if(next.has(jobId))next.delete(jobId);else next.add(jobId);return next;});
-  };
-
-  const handleSaveSkills=(jobId,skills)=>{
-    setSavedSkillsByJob(prev=>({...prev,[jobId]:skills}));
-  };
-
-  const handleSeekerFeedback=(appId,outcome)=>{
-    const app=applications.find(a=>a.id===appId);
-    setApplications(a=>a.map(x=>x.id===appId?{...x,seekerOutcome:outcome}:x));
-    if(app&&outcome.roundsReached?.length>0){
-      const newPts=Object.entries(app.skillRatings||{}).map(([skill,rating])=>({skill,rating,round:outcome.roundsReached[0],passed:outcome.type==="interview",bucket:app.job.bucket}));
-      setOutcomes(o=>[...o,...newPts]);
-    }
-  };
-
-  const handleHROutcome=(appId,outcome)=>{
-    const app=applications.find(a=>a.id===appId);
-    setApplications(a=>a.map(x=>x.id===appId?{...x,hrOutcome:outcome,stage:outcome.finalDecision==="offer_extended"||outcome.finalDecision==="hired"?"Offer Extended":outcome.finalDecision==="rejected"?"Rejected":x.stage}:x));
-    if(app&&outcome.rounds?.length>0){
-      const newPts=outcome.rounds.flatMap(r=>Object.entries(app.skillRatings||{}).map(([skill,rating])=>({skill,rating,round:r.round,passed:!!r.passed,bucket:app.job.bucket})));
-      setOutcomes(o=>[...o,...newPts]);
-    }
-  };
-
-  const seekerNavItems=[{id:"jobs",label:"💼 Jobs"},{id:"tracker",label:"📋 My Applications",badge:appliedJobIds.size||null},{id:"insights",label:"📊 Insights"}];
-  const hrNavItems=[{id:"pipeline",label:"🏢 Pipeline",badge:applications.length||null},{id:"datamoat",label:"⭐ Data Moat"}];
-
-  if(mode==="landing")return(
-    <>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0}@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <Landing onSeeker={()=>{setMode("seeker");setSeekerView("onboard");}} onHR={()=>setMode("hr")}/>
-    </>
-  );
-
-  return(
-    <div style={{background:C.bg,minHeight:"100vh",color:C.text,fontFamily:F,display:"flex",flexDirection:"column"}}>
-      <style>{`*{box-sizing:border-box;margin:0;padding:0}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <nav style={{background:C.card,borderBottom:`1px solid ${C.border}`,padding:"0 20px",display:"flex",alignItems:"center",gap:0,flexShrink:0,height:52}}>
-        <button onClick={()=>setMode("landing")} style={{fontSize:18,fontWeight:900,background:`linear-gradient(135deg,${C.accentL},${C.green})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",border:"none",cursor:"pointer",padding:0,fontFamily:F,marginRight:16}}>EasyJob</button>
-        <div style={{display:"flex",gap:4,marginRight:12}}>
-          {[["seeker","👤 Seeker",C.accent],["hr","🏢 HR",C.green]].map(([m,l,c])=>(
-            <button key={m} onClick={()=>setMode(m)} style={{background:mode===m?`${c}20`:"none",color:mode===m?c:C.muted,border:`1px solid ${mode===m?c:C.border}`,borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F,transition:".2s"}}>{l}</button>
-          ))}
-        </div>
-        <div style={{display:"flex",borderLeft:`1px solid ${C.border}`,paddingLeft:12,height:"100%",alignItems:"center",gap:0}}>
-          {mode==="seeker"&&profile&&seekerNavItems.map(item=>(
-            <button key={item.id} onClick={()=>setSeekerView(item.id)} style={{background:"none",border:"none",borderBottom:`2px solid ${seekerView===item.id&&seekerView!=="jobdetail"?C.accent:"transparent"}`,color:seekerView===item.id&&seekerView!=="jobdetail"?C.accent:C.muted,padding:"0 12px",height:"100%",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F,display:"flex",alignItems:"center",gap:5,transition:".2s"}}>
-              {item.label}{item.badge>0&&<span style={{background:C.accent,color:"#fff",borderRadius:10,padding:"1px 6px",fontSize:10,fontWeight:700}}>{item.badge}</span>}
-            </button>
-          ))}
-          {mode==="hr"&&hrNavItems.map(item=>(
-            <button key={item.id} onClick={()=>setHrView(item.id)} style={{background:"none",border:"none",borderBottom:`2px solid ${hrView===item.id?C.green:"transparent"}`,color:hrView===item.id?C.green:C.muted,padding:"0 12px",height:"100%",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:F,display:"flex",alignItems:"center",gap:5,transition:".2s"}}>
-              {item.label}{item.badge>0&&<span style={{background:C.green,color:"#04120c",borderRadius:10,padding:"1px 6px",fontSize:10,fontWeight:700}}>{item.badge}</span>}
-            </button>
-          ))}
-        </div>
-        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
-          <span style={{background:`${C.gold}15`,color:C.gold,border:`1px solid ${C.gold}30`,borderRadius:20,padding:"3px 10px",fontSize:10,fontWeight:700}}>{outcomes.length} data pts</span>
-          {profile&&mode==="seeker"&&<span style={{fontSize:12,color:C.muted}}>{profile.name}</span>}
-        </div>
-      </nav>
-      <div style={{flex:1,padding:"24px 20px 60px",overflowY:"auto"}}>
-        <div style={{maxWidth:900,margin:"0 auto"}}>
-          {mode==="seeker"&&(
-            <>
-              {seekerView==="onboard"&&<SeekerOnboarding onDone={p=>{setProfile(p);setSeekerView("jobs");}} toast={toast}/>}
-              {seekerView==="jobs"&&profile&&<JobDashboard profile={profile} onSelect={(job,score)=>{setSelectedJob(job);setSelectedScore(score);setSeekerView("jobdetail");}} appliedJobIds={appliedJobIds} bookmarkedJobIds={bookmarkedJobIds} onToggleBookmark={handleToggleBookmark} toast={toast}/>}
-              {seekerView==="jobdetail"&&selectedJob&&profile&&<JobDetail job={selectedJob} initScore={selectedScore} profile={profile} onBack={()=>setSeekerView("jobs")} onApply={handleApply} savedSkills={savedSkillsByJob[selectedJob.id]||null} onSaveSkills={handleSaveSkills} toast={toast}/>}
-              {seekerView==="tracker"&&profile&&<SeekerTracker applications={applications.filter(a=>a.candidateName===profile.name)} onFeedback={handleSeekerFeedback} toast={toast}/>}
-              {seekerView==="insights"&&profile&&<MarketInsights profile={profile}/>}
-            </>
-          )}
-          {mode==="hr"&&(
-            <>
-              {hrView==="pipeline"&&<HRPipeline applications={applications} onStageChange={handleStageChange} onHROutcome={handleHROutcome} toast={toast}/>}
-              {hrView==="datamoat"&&<DataMoatDashboard outcomes={outcomes} applications={applications}/>}
-            </>
-          )}
-        </div>
-      </div>
-      <ToastContainer toasts={toasts} dismiss={dismiss}/>
-    </div>
-  );
-}
-}
-
-/* END */
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App />)
 
 </script>
 
