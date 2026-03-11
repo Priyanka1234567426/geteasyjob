@@ -1144,7 +1144,9 @@ function HRPipeline({ applications, onStageChange, onHROutcome, toast }) {
   );
 
   if (selected) {
-    const app = selected, ai = analysis[app.id], stage = app.stage||"Applied", sc = STAGE_COLORS[stage]||C.muted;
+    const app = selected;
+    if (!app || !app.job || !app.candidateName) { setSelected(null); return null; }
+    const ai = analysis[app.id], stage = app.stage||"Applied", sc = STAGE_COLORS[stage]||C.muted;
     return (
       <div style={{maxWidth:700,margin:"0 auto"}}>
         {hrFeedbackFor && (
@@ -1266,7 +1268,7 @@ function HRPipeline({ applications, onStageChange, onHROutcome, toast }) {
             <div key={app.id} style={{...S.card,cursor:"pointer",transition:".2s",border:`1px solid ${hasO?`${C.green}30`:C.border}`}}
               onMouseEnter={e=>e.currentTarget.style.borderColor=C.green}
               onMouseLeave={e=>e.currentTarget.style.borderColor=hasO?`${C.green}30`:C.border}
-              onClick={() => setSelected(app)}>
+              onClick={() => setSelected({...app})}>
               <div style={{display:"flex",gap:12,alignItems:"center"}}>
                 <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},${C.green})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,flexShrink:0,color:"#fff"}}>{app.candidateName[0]}</div>
                 <div style={{flex:1}}>
@@ -1490,6 +1492,26 @@ function Landing({ onSeeker, onHR }) {
 }
 
 /* ─── MAIN APP ───────────────────────────────────────────────────── */
+/* ─── ERROR BOUNDARY ─────────────────────────────────────────────── */
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  componentDidCatch(e, info) { console.error("App crash:", e, info); }
+  render() {
+    if (this.state.error) return (
+      <div style={{background:"#070d1a",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+        <div style={{background:"#0e1623",border:"1px solid #e0555540",borderRadius:16,padding:32,maxWidth:500,width:"100%"}}>
+          <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
+          <h2 style={{color:"#e05555",fontWeight:800,marginBottom:8}}>Something went wrong</h2>
+          <pre style={{color:"#6b7a99",fontSize:11,whiteSpace:"pre-wrap",marginBottom:20,background:"#0a1020",padding:12,borderRadius:8,maxHeight:200,overflow:"auto"}}>{this.state.error?.message}</pre>
+          <button onClick={()=>this.setState({error:null})} style={{background:"#5b52f5",color:"#fff",border:"none",borderRadius:10,padding:"10px 22px",fontWeight:700,cursor:"pointer",fontSize:14}}>Try Again</button>
+        </div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 function App() {
   const [mode, setMode]           = useState("landing");
   const [seekerView, setSeekerView] = useState("onboard");
@@ -1602,7 +1624,7 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+ReactDOM.createRoot(document.getElementById("root")).render(<ErrorBoundary><App/></ErrorBoundary>);
 </script>
 </body>
 </html>
