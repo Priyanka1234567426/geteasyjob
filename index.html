@@ -1266,7 +1266,7 @@ function HRPipeline({ applications, onStageChange, onHROutcome, toast }) {
             <div key={app.id} style={{...S.card,cursor:"pointer",transition:".2s",border:`1px solid ${hasO?`${C.green}30`:C.border}`}}
               onMouseEnter={e=>e.currentTarget.style.borderColor=C.green}
               onMouseLeave={e=>e.currentTarget.style.borderColor=hasO?`${C.green}30`:C.border}
-              onClick={() => { setSelected(app); analyze(app); }}>
+              onClick={() => setSelected(app)}>
               <div style={{display:"flex",gap:12,alignItems:"center"}}>
                 <div style={{width:44,height:44,borderRadius:"50%",background:`linear-gradient(135deg,${C.accent},${C.green})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,flexShrink:0,color:"#fff"}}>{app.candidateName[0]}</div>
                 <div style={{flex:1}}>
